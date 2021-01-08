@@ -4,8 +4,111 @@ from datetime import datetime
 from alertconfig import dbconfig
 from make_log import log_exceptions, log_data, log_custom_data
 from sms_and_push import send_push, send_sms
+from db_conf import hosp_conn_data
 
 info_dict = dict()
+
+def trigger(refno, hospital_id, t_ype, status):
+    try:
+        master  = dict()
+        q = f"SELECT `Type` FROM send_sms_config where statuslist LIKE '%{status}%'"
+        with mysql.connector.connect(**hosp_conn_data) as con:
+            cur = con.cursor()
+            cur.execute(q)
+            result = cur.fetchall()
+        user_types = [i[0] for i in result]
+        sms_texts = []
+        for i in user_types:
+            q = "SELECT sms FROM alerts where UserType=%s and Type=%s and Status=%s limit 1"
+            with mysql.connector.connect(**hosp_conn_data) as con:
+                cur = con.cursor()
+                cur.execute(q, (i, t_ype, status))
+                result = cur.fetchone()
+                if result is not None:
+                    master[i] = {"smstext_raw": result[0]}
+        for user_type, data in master.items():
+            word_list = re.findall(r"(?<=<<).*(?=>>)", data['smstext_raw'])
+            master[user_type]['wordlist'] = word_list
+        for i in master:
+            master[i]['worddict'] = {}
+            for k in master[i]['wordlist']:
+                q = "select tableMap, tableColumn from variablesMap where variableName=%s"
+                with mysql.connector.connect(**hosp_conn_data) as con:
+                    cur = con.cursor()
+                    cur.execute(q, (k, ))
+                    result = cur.fetchone()
+                    if result is not None:
+                        master[i]['worddict'][k] = {'table': result[0], 'column': result[1]}
+        for i in master:
+            for j in master[i]['worddict']:
+                word, table, column = j, master[i]['worddict'][j]['table'], master[i]['worddict'][j]['column']
+                q = "select %s from %s where refno='%s' limit 1" % (column, table, refno)
+                with mysql.connector.connect(**hosp_conn_data) as con:
+                    cur = con.cursor()
+                    cur.execute(q)
+                    result = cur.fetchone()
+                    if result is not None:
+                        master[i]['worddict'][j]['value'] = result[0]
+        for i in master:
+            raw_sms, worddict = master[i]['smstext_raw'], master[i]['worddict']
+            for j in worddict:
+                raw_sms = raw_sms.replace(f"<<{j}>>", worddict[j]['value'])
+            master[i]['sms'] = raw_sms
+        for i in master:
+            i = 'Hospital'
+            if i == 'Patient':
+                no_list = fetch_p_contact_no(refno)
+                for mob_no in no_list:
+                    data_dict = {}
+                    response =send_sms(mob_no, master[i]['sms'])
+                    data_dict['mobileno'] = mob_no
+                    data_dict['type'] = t_ype
+                    data_dict['notification_text'] = master[i]['sms']
+                    data_dict['sms'] = "X"
+                    data_dict['push'] = ""
+                    data_dict['timestamp'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                    data_dict['messageid'] = ""
+                    data_dict['error'] = response  # if response == '200', then flag = 2
+                    data_dict['device_token'] = ""
+                    data_dict['ref_no'] = refno
+                    write_to_alert_log(data_dict)
+            elif i == 'Admin':
+                p = fetch_admin_contacts()
+                for mob_no, hosp_id in p:
+                    if hospital_id == hosp_id or hos_id == 'Admin':
+                        data_dict = {}
+                        response = send_sms(mob_no, master[i]['sms'])
+                        data_dict['mobileno'] = mob_no
+                        data_dict['type'] = t_ype
+                        data_dict['notification_text'] = master[i]['sms']
+                        data_dict['sms'] = "X"
+                        data_dict['push'] = ""
+                        data_dict['timestamp'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                        data_dict['messageid'] = ""
+                        data_dict['error'] = response  # if response == '200', then flag = 2
+                        data_dict['device_token'] = ""
+                        data_dict['ref_no'] = refno
+                        write_to_alert_log(data_dict)
+            elif i == 'Hospital':
+                no_list = fetch_hosp_contacts(hospital_id)
+                for mob_no in no_list:
+                    data_dict = {}
+                    response =send_sms(mob_no, master[i]['sms'])
+                    data_dict['mobileno'] = mob_no
+                    data_dict['type'] = t_ype
+                    data_dict['notification_text'] = master[i]['sms']
+                    data_dict['sms'] = "X"
+                    data_dict['push'] = ""
+                    data_dict['timestamp'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                    data_dict['messageid'] = ""
+                    data_dict['error'] = response  # if response == '200', then flag = 2
+                    data_dict['device_token'] = ""
+                    data_dict['ref_no'] = refno
+                    write_to_alert_log(data_dict)
+                pass
+        return True
+    except Exception as e:
+        return "fail in triggeralert " + str(e)
 
 
 def triggerAlert(refno, hospital_id):

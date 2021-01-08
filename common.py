@@ -4,7 +4,7 @@ from time import sleep
 import mysql.connector
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from alerts_ import triggerAlert
+from alerts_ import trigger
 
 conf_conn_data = {'host': "iclaimdev.caq5osti8c47.ap-south-1.rds.amazonaws.com",
                   'user': "admin",
@@ -65,7 +65,7 @@ def sms_scheduler():
                 q = "update hospitalTLog set `lock`=1 where Type_Ref=%s"
                 cur.execute(q, (key,))
                 con.commit()
-            triggerAlert(value['Type_Ref'], value['HospitalID'])
+            trigger(value['Type_Ref'], value['HospitalID'], value['Type'], value['status'])
             with mysql.connector.connect(**logs_conn_data) as con:
                 cur = con.cursor()
                 q = "update hospitalTLog set `lock`=0 where Type_Ref=%s"
@@ -75,15 +75,14 @@ def sms_scheduler():
 
 def run_sms_scheduler():
     sched = BackgroundScheduler(daemon=False)
-    sched.add_job(sms_scheduler, 'interval', seconds=1, max_instances=1)
+    sched.add_job(fun, 'interval', seconds=1, max_instances=1)
     sched.start()
 
 
 def fun():
-    while (1):
-        with open('1.txt', 'a') as fp:
-            print(str(random.randint(1000, 10000)), file=fp)
-        sleep(1)
+    with open('1.txt', 'a') as fp:
+        print(str(random.randint(1000, 10000)), file=fp)
+
 
 
 if __name__ == '__main__':

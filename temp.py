@@ -1,5 +1,9 @@
-import requests
-data = {}
-request2 = requests.post("http://localhost:9980/get_hospital_db_info", data=data)
-a = request2.json()
+import re
+a = """
+'Dear Patient,
+The Pre-Authorization request has been submitted to <<insurerTPA>>. 
+Contact TPA Desk for further information - +91 9667251365
+<<hospitalID>>'
+"""
+b = re.findall(r"(?<=<<).*(?=>>)", a)
 pass
