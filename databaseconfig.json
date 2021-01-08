@@ -1,0 +1,14 @@
+{
+        "Config":{
+                "MYSQL_HOST":"iclaimdev.caq5osti8c47.ap-south-1.rds.amazonaws.com",
+                "MYSQL_USER":"admin",
+                "MYSQL_PASSWORD":"Welcome1!",
+                "MYSQL_DB":"test_iclaimLogs"
+                 }
+}
+
+
+
+
+
+
