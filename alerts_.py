@@ -54,8 +54,8 @@ def trigger(refno, hospital_id, t_ype, status):
             for j in worddict:
                 raw_sms = raw_sms.replace(f"<<{j}>>", worddict[j]['value'])
             master[i]['sms'] = raw_sms
+        from common import update_data_sms
         for i in master:
-            i = 'Hospital'
             if i == 'Patient':
                 no_list = fetch_p_contact_no(refno)
                 for mob_no in no_list:
@@ -72,10 +72,14 @@ def trigger(refno, hospital_id, t_ype, status):
                     data_dict['device_token'] = ""
                     data_dict['ref_no'] = refno
                     write_to_alert_log(data_dict)
+                    if response == 200:
+                        update_data_sms(smsTrigger='1', error='0', Type_Ref=refno)
+                    else:
+                        update_data_sms(smsTrigger='0', error='1', errorDescription=response, Type_Ref=refno)
             elif i == 'Admin':
                 p = fetch_admin_contacts()
                 for mob_no, hosp_id in p:
-                    if hospital_id == hosp_id or hos_id == 'Admin':
+                    if hospital_id == hosp_id or hosp_id == 'Admin':
                         data_dict = {}
                         response = send_sms(mob_no, master[i]['sms'])
                         data_dict['mobileno'] = mob_no
@@ -89,6 +93,10 @@ def trigger(refno, hospital_id, t_ype, status):
                         data_dict['device_token'] = ""
                         data_dict['ref_no'] = refno
                         write_to_alert_log(data_dict)
+                        if response == 200:
+                            update_data_sms(smsTrigger='1', error='0', Type_Ref=refno)
+                        else:
+                            update_data_sms(smsTrigger='0', error='1', errorDescription=response, Type_Ref=refno)
             elif i == 'Hospital':
                 no_list = fetch_hosp_contacts(hospital_id)
                 for mob_no in no_list:
@@ -105,6 +113,10 @@ def trigger(refno, hospital_id, t_ype, status):
                     data_dict['device_token'] = ""
                     data_dict['ref_no'] = refno
                     write_to_alert_log(data_dict)
+                    if response == 200:
+                        update_data_sms(smsTrigger='1', error='0', Type_Ref=refno)
+                    else:
+                        update_data_sms(smsTrigger='0', error='1', errorDescription=response, Type_Ref=refno)
                 pass
         return True
     except Exception as e:
