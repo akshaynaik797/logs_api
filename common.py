@@ -75,7 +75,7 @@ def sms_scheduler():
 
 def run_sms_scheduler():
     sched = BackgroundScheduler(daemon=False)
-    sched.add_job(fun, 'interval', seconds=1, max_instances=1)
+    sched.add_job(sms_scheduler, 'interval', seconds=1, max_instances=1)
     sched.start()
 
 
