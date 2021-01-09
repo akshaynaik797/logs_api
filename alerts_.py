@@ -27,7 +27,7 @@ def trigger(refno, hospital_id, t_ype, status):
                 if result is not None:
                     master[i] = {"smstext_raw": result[0]}
         for user_type, data in master.items():
-            word_list = re.findall(r"(?<=<<).*(?=>>)", data['smstext_raw'])
+            word_list = re.findall(r"(?<=<<)\w+(?=>>)", data['smstext_raw'])
             master[user_type]['wordlist'] = word_list
         for i in master:
             master[i]['worddict'] = {}
@@ -42,13 +42,29 @@ def trigger(refno, hospital_id, t_ype, status):
         for i in master:
             for j in master[i]['worddict']:
                 word, table, column = j, master[i]['worddict'][j]['table'], master[i]['worddict'][j]['column']
-                q = "select %s from %s where refno='%s' limit 1" % (column, table, refno)
-                with mysql.connector.connect(**hosp_conn_data) as con:
-                    cur = con.cursor()
-                    cur.execute(q)
-                    result = cur.fetchone()
-                    if result is not None:
-                        master[i]['worddict'][j]['value'] = result[0]
+                if table not in ['preauth_document', 'query_document']:
+                    q = "select %s from %s where refno='%s' limit 1" % (column, table, refno)
+                    with mysql.connector.connect(**hosp_conn_data) as con:
+                        cur = con.cursor()
+                        cur.execute(q)
+                        result = cur.fetchone()
+                        if result is not None:
+                            master[i]['worddict'][j]['value'] = result[0]
+                else:
+                    q = "select srno from status_track where Type_Ref=%s and Type=%s and status=%s limit 1"
+                    with mysql.connector.connect(**hosp_conn_data) as con:
+                        cur = con.cursor()
+                        cur.execute(q, (refno, t_ype, status))
+                        statustrackid = cur.fetchone()
+                        if statustrackid is not None:
+                            statustrackid = statustrackid[0]
+                            q = "select %s from %s where statustrackid='%s' limit 1" % (column, table, statustrackid)
+                            with mysql.connector.connect(**hosp_conn_data) as con:
+                                cur = con.cursor()
+                                cur.execute(q)
+                                result = cur.fetchone()
+                                if result is not None:
+                                    master[i]['worddict'][j]['value'] = result[0]
         for i in master:
             raw_sms, worddict = master[i]['smstext_raw'], master[i]['worddict']
             for j in worddict:
@@ -120,7 +136,7 @@ def trigger(refno, hospital_id, t_ype, status):
                 pass
         return True
     except Exception as e:
-        return "fail in triggeralert " + str(e)
+        log_exceptions(refno=refno, hospital_id=hospital_id, t_ype=t_ype, status=status)
 
 
 def triggerAlert(refno, hospital_id):
