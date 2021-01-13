@@ -18,6 +18,7 @@ def trigger(refno, hospital_id, t_ype, status):
             result = cur.fetchall()
         user_types = [i[0] for i in result]
         sms_texts = []
+        print('user types', refno, hospital_id, t_ype, status)
         for i in user_types:
             q = "SELECT sms FROM alerts where UserType=%s and Type=%s and Status=%s limit 1"
             with mysql.connector.connect(**hosp_conn_data) as con:
@@ -26,6 +27,7 @@ def trigger(refno, hospital_id, t_ype, status):
                 result = cur.fetchone()
                 if result is not None:
                     master[i] = {"smstext_raw": result[0]}
+        print('raw sms', refno, hospital_id, t_ype, status)
         for user_type, data in master.items():
             word_list = re.findall(r"(?<=<<)\w+(?=>>)", data['smstext_raw'])
             master[user_type]['wordlist'] = word_list
@@ -39,6 +41,7 @@ def trigger(refno, hospital_id, t_ype, status):
                     result = cur.fetchone()
                     if result is not None:
                         master[i]['worddict'][k] = {'table': result[0], 'column': result[1]}
+        print('word list', refno, hospital_id, t_ype, status)
         for i in master:
             for j in master[i]['worddict']:
                 word, table, column = j, master[i]['worddict'][j]['table'], master[i]['worddict'][j]['column']
@@ -65,11 +68,13 @@ def trigger(refno, hospital_id, t_ype, status):
                                 result = cur.fetchone()
                                 if result is not None:
                                     master[i]['worddict'][j]['value'] = result[0]
+        print('word value', refno, hospital_id, t_ype, status)
         for i in master:
             raw_sms, worddict = master[i]['smstext_raw'], master[i]['worddict']
             for j in worddict:
                 raw_sms = raw_sms.replace(f"<<{j}>>", worddict[j]['value'])
             master[i]['sms'] = raw_sms
+        print('sms body', refno, hospital_id, t_ype, status)
         from common import update_data_sms
         for i in master:
             if i == 'Patient':
@@ -133,7 +138,6 @@ def trigger(refno, hospital_id, t_ype, status):
                         update_data_sms(smsTrigger='1', error='0', Type_Ref=refno)
                     else:
                         update_data_sms(smsTrigger='0', error='1', errorDescription=response, Type_Ref=refno)
-                pass
         return True
     except Exception as e:
         log_exceptions(refno=refno, hospital_id=hospital_id, t_ype=t_ype, status=status)

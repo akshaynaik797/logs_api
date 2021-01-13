@@ -38,11 +38,11 @@ def get_hospital_db_info():
     return jsonify(records)
 
 
-@app.route('/insert_data_sms', methods=["POST"])
-def insert_data_sms():
+@app.route('/modify_hospitaltlog', methods=["POST"])
+def modify_hospitaltlog():
     field_list, datadict = ('PatientID_TreatmentID', 'Type_Ref', 'Type', 'status', 'HospitalID', 'cdate', 'person_name',
-                            'smsTrigger'
-                            , 'pushTrigger', 'lock', 'error', 'errorDescription'), dict()
+                            'smsTrigger', 'pushTrigger', 'lock', 'error',
+                            'errorDescription', 'insurerID', 'fStatus', 'fLock'), dict()
     for i in field_list:
         datadict[i] = ' '
     data = request.form.to_dict()
@@ -59,23 +59,68 @@ def insert_data_sms():
         #logic for diif hospitals
         with mysql.connector.connect(**logs_conn_data) as con:
             cur = con.cursor()
-            q = "INSERT INTO hospitalTLog (`PatientID_TreatmentID`,`Type_Ref`,`Type`,`status`,`HospitalID`,`cdate`,`person_name`,`smsTrigger`,`pushTrigger`,`lock`,`error`,`errorDescription`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"
+            q = "INSERT INTO hospitalTLog (`PatientID_TreatmentID`,`Type_Ref`,`Type`,`status`,`HospitalID`,`cdate`,`person_name`,`smsTrigger`,`pushTrigger`,`lock`,`error`,`errorDescription`, insurerID, fStatus, fLock) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"
             cur.execute(q, record_data)
             con.commit()
     return jsonify('success')
 
 
-@app.route('/get_data_sms', methods=["POST"])
-def get_data_sms():
+@app.route('/get_hospitaltlog', methods=["POST"])
+def get_hospitaltlog():
     field_list, datadict, records = ('PatientID_TreatmentID', 'Type_Ref', 'Type', 'status', 'HospitalID', 'cdate',
-                                     'person_name', 'smsTrigger'
+                                     'person_name', 'smsTrigger', 'insurerID', 'fStatus', 'fLock'
                                      , 'pushTrigger', 'lock', 'error', 'errorDescription'), dict(), []
     with mysql.connector.connect(**logs_conn_data) as con:
         cur = con.cursor()
-        q = "select `PatientID_TreatmentID`,`Type_Ref`,`Type`,`status`,`HospitalID`,`cdate`,`person_name`,`smsTrigger`,`pushTrigger`,`lock`,`error`,`errorDescription` from hospitalTLog where smsTrigger='0' and `lock`='0';"
+        q = "select `PatientID_TreatmentID`,`Type_Ref`,`Type`,`status`,`HospitalID`,`cdate`,`person_name`," \
+            "`smsTrigger`,`pushTrigger`,`lock`,`error`,`errorDescription` , 'insurerID', 'fStatus', 'fLock' " \
+            "from hospitalTLog where smsTrigger='0' and `lock`='0';"
         cur.execute(q)
         r = cur.fetchall()
         for i in r:
+            for j, k in zip(field_list, i):
+                datadict[j] = k
+            records.append(datadict)
+    return jsonify(records)
+
+
+@app.route('/modify_apisLog', methods=["POST"])
+def modify_apisLog():
+    field_list, datadict = ('hospitalID','referenceNo','method','title','purpose','status',
+                            'request','response','error','runtime','ipAddress'), dict()
+    for i in field_list:
+        datadict[i] = ' '
+    data = request.form.to_dict()
+    if 'referenceNo' not in data:
+        return jsonify('insert refno')
+    else:
+        for i in datadict:
+            if i in data:
+                datadict[i] = data[i]
+        record_data = []
+        for i in field_list:
+            record_data.append(datadict[i])
+        #logic for diif hospitals
+        with mysql.connector.connect(**logs_conn_data) as con:
+            cur = con.cursor()
+            q = "INSERT INTO apisLog (`hospitalID`,`referenceNo`,`method`,`title`,`purpose`,`status`,`request`,`response`,`error`,`runtime`,`ipAddress`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"
+            cur.execute(q, record_data)
+            con.commit()
+    return jsonify('success')
+
+
+@app.route('/get_apisLog', methods=["POST"])
+def get_apisLog():
+    data = request.form.to_dict()
+    field_list, datadict, records = ('srno', 'dateTime','hospitalID','referenceNo','method','title','purpose','status',
+                            'request','response','error','runtime','ipAddress'), dict(), []
+    with mysql.connector.connect(**logs_conn_data) as con:
+        cur = con.cursor()
+        q = "select `srno`,`dateTime`,`hospitalID`,`referenceNo`,`method`,`title`,`purpose`,`status`,`request`,`response`,`error`,`runtime`,`ipAddress` from apisLog where dateTime between %s and %s;"
+        cur.execute(q, (data['from'], data['to']))
+        r = cur.fetchall()
+        for i in r:
+            datadict = dict()
             for j, k in zip(field_list, i):
                 datadict[j] = k
             records.append(datadict)
