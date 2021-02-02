@@ -6,7 +6,9 @@ from common import conf_conn_data, logs_conn_data, run_sms_scheduler
 app = Flask(__name__)
 
 cors = CORS(app)
+######for test purpose
 run_sms_scheduler()
+######
 app.config['CORS_HEADERS'] = 'Content-Type'
 app.config['referrer_url'] = None
 
@@ -42,7 +44,7 @@ def get_hospital_db_info():
 def modify_hospitaltlog():
     field_list, datadict = ('PatientID_TreatmentID', 'Type_Ref', 'Type', 'status', 'HospitalID', 'cdate', 'person_name',
                             'smsTrigger', 'pushTrigger', 'lock', 'error',
-                            'errorDescription', 'insurerID', 'fStatus', 'fLock'), dict()
+                            'errorDescription', 'insurerID', 'fStatus', 'fLock', 'transactionID'), dict()
     for i in field_list:
         datadict[i] = ' '
     data = request.form.to_dict()
@@ -59,29 +61,53 @@ def modify_hospitaltlog():
         #logic for diif hospitals
         with mysql.connector.connect(**logs_conn_data) as con:
             cur = con.cursor()
-            q = "INSERT INTO hospitalTLog (`PatientID_TreatmentID`,`Type_Ref`,`Type`,`status`,`HospitalID`,`cdate`,`person_name`,`smsTrigger`,`pushTrigger`,`lock`,`error`,`errorDescription`, insurerID, fStatus, fLock) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"
+            q = "INSERT INTO hospitalTLog (`PatientID_TreatmentID`,`Type_Ref`,`Type`,`status`,`HospitalID`,`cdate`,`person_name`,`smsTrigger`,`pushTrigger`,`lock`,`error`,`errorDescription`, insurerID, fStatus, fLock, transactionID) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"
             cur.execute(q, record_data)
             con.commit()
     return jsonify('success')
 
 
-@app.route('/get_hospitaltlog', methods=["POST"])
-def get_hospitaltlog():
-    field_list, datadict, records = ('PatientID_TreatmentID', 'Type_Ref', 'Type', 'status', 'HospitalID', 'cdate',
-                                     'person_name', 'smsTrigger', 'insurerID', 'fStatus', 'fLock'
-                                     , 'pushTrigger', 'lock', 'error', 'errorDescription'), dict(), []
+@app.route('/update_hospitaltlog', methods=["POST"])
+def update_hospitaltlog():
+    data = request.form.to_dict()
+    if 'Type_Ref' not in data or 'Type' not in data or 'status' not in data:
+        return jsonify('insert refno, Type, status')
+    if 'fStatus' in data and 'fLock' in data:
+        q = "update hospitalTLog set fStatus=%s ,fLock = %s where Type_Ref=%s and Type=%s and status=%s"
+        record = (data['fStatus'], data['fLock'], data['Type_Ref'], data['Type'], data['status'],)
+    elif 'fStatus' in data:
+        q = "update hospitalTLog set fStatus=%s where Type_Ref=%s and Type=%s and status=%s"
+        record = (data['fStatus'], data['Type_Ref'], data['Type'], data['status'],)
+    elif 'fLock' in data:
+        q = "update hospitalTLog set fLock=%s where Type_Ref=%s and Type=%s and status=%s"
+        record = (data['fLock'], data['Type_Ref'], data['Type'], data['status'],)
+    else:
+        return jsonify('insert flock or fstatus')
     with mysql.connector.connect(**logs_conn_data) as con:
         cur = con.cursor()
-        q = "select `PatientID_TreatmentID`,`Type_Ref`,`Type`,`status`,`HospitalID`,`cdate`,`person_name`," \
-            "`smsTrigger`,`pushTrigger`,`lock`,`error`,`errorDescription` , 'insurerID', 'fStatus', 'fLock' " \
-            "from hospitalTLog where smsTrigger='0' and `lock`='0';"
+        cur.execute(q, record)
+        con.commit()
+    return jsonify('success')
+
+@app.route('/get_hospitaltlog', methods=["POST"])
+def get_hospitaltlog():
+    data = request.form.to_dict()
+    field_list, datadict, records = ('srno', 'transactionID', 'PatientID_TreatmentID', 'Type_Ref', 'Type',
+                                     'status', 'HospitalID', 'cdate',
+                                     'person_name', 'smsTrigger', 'pushTrigger', 'insurerID', 'fStatus', 'fLock',
+                                     'lock', 'error', 'errorDescription'), dict(), []
+    with mysql.connector.connect(**logs_conn_data) as con:
+        cur = con.cursor()
+        q = "select `srno`, `transactionID`,`PatientID_TreatmentID`,`Type_Ref`,`Type`,`status`,`HospitalID`,`cdate`,`person_name`,`smsTrigger`,`pushTrigger`,`insurerID`,`fStatus`,`fLock`,`lock`,`error`,`errorDescription` from hospitalTLog where fStatus='I' and `fLock`='0';"
         cur.execute(q)
         r = cur.fetchall()
         for i in r:
+            datadict = dict()
             for j, k in zip(field_list, i):
                 datadict[j] = k
             records.append(datadict)
     return jsonify(records)
+
 
 
 @app.route('/modify_apisLog', methods=["POST"])
@@ -109,6 +135,8 @@ def modify_apisLog():
     return jsonify('success')
 
 
+
+
 @app.route('/get_apisLog', methods=["POST"])
 def get_apisLog():
     data = request.form.to_dict()
@@ -126,6 +154,23 @@ def get_apisLog():
             records.append(datadict)
     return jsonify(records)
 
+
+@app.route('/get_apisLog', methods=["POST"])
+def get_apisLog():
+    data = request.form.to_dict()
+    field_list, datadict, records = ('srno', 'dateTime','hospitalID','referenceNo','method','title','purpose','status',
+                            'request','response','error','runtime','ipAddress'), dict(), []
+    with mysql.connector.connect(**logs_conn_data) as con:
+        cur = con.cursor()
+        q = "select `srno`,`dateTime`,`hospitalID`,`referenceNo`,`method`,`title`,`purpose`,`status`,`request`,`response`,`error`,`runtime`,`ipAddress` from apisLog where dateTime between %s and %s;"
+        cur.execute(q, (data['from'], data['to']))
+        r = cur.fetchall()
+        for i in r:
+            datadict = dict()
+            for j, k in zip(field_list, i):
+                datadict[j] = k
+            records.append(datadict)
+    return jsonify(records)
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=9980)

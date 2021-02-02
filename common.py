@@ -52,7 +52,7 @@ def sms_scheduler():
                             'errorDescription', 'insurerID', 'fStatus', 'fLock'), dict()
     with mysql.connector.connect(**logs_conn_data) as con:
         cur = con.cursor()
-        q = "SELECT PatientID_TreatmentID, Type_Ref, Type, status, HospitalID, cdate, person_name,smsTrigger, pushTrigger, `lock`, error, errorDescription, 'insurerID', 'fStatus', 'fLock' FROM hospitalTLog where smsTrigger='0' and `lock`='0' and error='0';"
+        q = "SELECT PatientID_TreatmentID, Type_Ref, Type, status, HospitalID, cdate, person_name,smsTrigger, pushTrigger, `lock`, error, errorDescription, insurerID, fStatus, fLock FROM hospitalTLog where smsTrigger='0' and `lock`='0' and error='0';"
         cur.execute(q)
         result = cur.fetchall()
     if len(result) > 0:
@@ -64,9 +64,18 @@ def sms_scheduler():
         for key, value in records.items():
             with mysql.connector.connect(**logs_conn_data) as con:
                 cur = con.cursor()
-                q = "update hospitalTLog set `lock`=1 where Type_Ref=%s"
+                q = "update hospitalTLog set `lock`= 1 where Type_Ref=%s"
+                ####for test purpose
                 cur.execute(q, (key,))
+                ####
                 con.commit()
+                q = "select descr from form_status where scode=%s limit 1"
+                cur.execute(q, (value['status'],))
+                result = cur.fetchone()
+                if result is not None:
+                    value['status'] = result[0]
+                else:
+                    continue
             with open('logs/status.log', 'a') as fp:
                 print(str(datetime.now()), 'found record', value['Type_Ref'], value['HospitalID'], value['Type'], value['status'], sep=',', file=fp)
             trigger(value['Type_Ref'], value['HospitalID'], value['Type'], value['status'])
@@ -75,7 +84,9 @@ def sms_scheduler():
             with mysql.connector.connect(**logs_conn_data) as con:
                 cur = con.cursor()
                 q = "update hospitalTLog set `lock`=0 where Type_Ref=%s"
+                ####for test purpose
                 cur.execute(q, (key,))
+                ####
                 con.commit()
 
 
