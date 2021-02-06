@@ -8,11 +8,43 @@ from db_conf import hosp_conn_data
 
 info_dict = dict()
 
+def get_db_conf(**kwargs):
+    fields = ('host', 'database', 'port', 'user', 'password')
+    if 'env' not in kwargs:
+        kwargs['env'] = 'live'
+    conn_data = {'host': "iclaimdev.caq5osti8c47.ap-south-1.rds.amazonaws.com",
+                 'user': "admin",
+                 'password': "Welcome1!",
+                 'database': 'portals'}
+    with mysql.connector.connect(**conn_data) as con:
+        cur = con.cursor()
+        q = 'SELECT host, dbName, port, userName, password FROM dbConfiguration where hospitalID=%s and environment=%s limit 1;'
+        cur.execute(q, (kwargs['hosp'], kwargs['env']))
+        result = cur.fetchone()
+        if result is not None:
+            conf_data = dict()
+            for key, value in zip(fields, result):
+                conf_data[key] = value
+            return conf_data
+
+
+def check_table(hospital_id, table_name, current_dbconf):
+    with mysql.connector.connect(**current_dbconf) as con:
+        cur = con.cursor()
+        q = 'SHOW TABLES LIKE %s;'
+        cur.execute(q, (table_name,))
+        result = cur.fetchone()
+        if result is not None:
+            return current_dbconf
+        else:
+            return get_db_conf(hosp=hospital_id)
+
 def trigger(refno, hospital_id, t_ype, status):
     try:
         master  = dict()
         q = f"SELECT `Type` FROM send_sms_config where statuslist LIKE '%{status}%'"
-        with mysql.connector.connect(**hosp_conn_data) as con:
+        conn_data = check_table(hospital_id, 'send_sms_config', hosp_conn_data)
+        with mysql.connector.connect(**conn_data) as con:
             cur = con.cursor()
             cur.execute(q)
             result = cur.fetchall()
@@ -21,7 +53,8 @@ def trigger(refno, hospital_id, t_ype, status):
         print('user types', refno, hospital_id, t_ype, status)
         for i in user_types:
             q = "SELECT sms FROM alerts where UserType=%s and Type=%s and Status=%s limit 1"
-            with mysql.connector.connect(**hosp_conn_data) as con:
+            conn_data = check_table(hospital_id, 'alerts', hosp_conn_data)
+            with mysql.connector.connect(**conn_data) as con:
                 cur = con.cursor()
                 cur.execute(q, (i, t_ype, status))
                 result = cur.fetchone()
@@ -35,7 +68,8 @@ def trigger(refno, hospital_id, t_ype, status):
             master[i]['worddict'] = {}
             for k in master[i]['wordlist']:
                 q = "select tableMap, tableColumn from variablesMap where variableName=%s"
-                with mysql.connector.connect(**hosp_conn_data) as con:
+                conn_data = check_table(hospital_id, 'send_sms_config', hosp_conn_data)
+                with mysql.connector.connect(**conn_data) as con:
                     cur = con.cursor()
                     cur.execute(q, (k, ))
                     result = cur.fetchone()
@@ -47,7 +81,8 @@ def trigger(refno, hospital_id, t_ype, status):
                 word, table, column = j, master[i]['worddict'][j]['table'], master[i]['worddict'][j]['column']
                 if table not in ['preauth_document', 'query_document']:
                     q = "select %s from %s where refno='%s' limit 1" % (column, table, refno)
-                    with mysql.connector.connect(**hosp_conn_data) as con:
+                    conn_data = check_table(hospital_id, 'send_sms_config', hosp_conn_data)
+                    with mysql.connector.connect(**conn_data) as con:
                         cur = con.cursor()
                         cur.execute(q)
                         result = cur.fetchone()
@@ -55,14 +90,16 @@ def trigger(refno, hospital_id, t_ype, status):
                             master[i]['worddict'][j]['value'] = result[0]
                 else:
                     q = "select srno from status_track where Type_Ref=%s and Type=%s and status=%s limit 1"
-                    with mysql.connector.connect(**hosp_conn_data) as con:
+                    conn_data = check_table(hospital_id, 'send_sms_config', hosp_conn_data)
+                    with mysql.connector.connect(**conn_data) as con:
                         cur = con.cursor()
                         cur.execute(q, (refno, t_ype, status))
                         statustrackid = cur.fetchone()
                         if statustrackid is not None:
                             statustrackid = statustrackid[0]
                             q = "select %s from %s where statustrackid='%s' limit 1" % (column, table, statustrackid)
-                            with mysql.connector.connect(**hosp_conn_data) as con:
+                            conn_data = check_table(hospital_id, 'send_sms_config', hosp_conn_data)
+                            with mysql.connector.connect(**conn_data) as con:
                                 cur = con.cursor()
                                 cur.execute(q)
                                 result = cur.fetchone()

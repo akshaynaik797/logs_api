@@ -15,7 +15,7 @@ conf_conn_data = {'host': "iclaimdev.caq5osti8c47.ap-south-1.rds.amazonaws.com",
 logs_conn_data = {'host': "iclaimdev.caq5osti8c47.ap-south-1.rds.amazonaws.com",
                   'user': "admin",
                   'password': "Welcome1!",
-                  'database': 'test_iclaimLogs'}
+                  'database': 'portals'}
 
 
 def get_db_info(hospital_id):
@@ -65,9 +65,7 @@ def sms_scheduler():
             with mysql.connector.connect(**logs_conn_data) as con:
                 cur = con.cursor()
                 q = "update hospitalTLog set `lock`= 1 where Type_Ref=%s"
-                ####for test purpose
                 cur.execute(q, (key,))
-                ####
                 con.commit()
                 q = "select descr from form_status where scode=%s limit 1"
                 cur.execute(q, (value['status'],))
@@ -84,9 +82,7 @@ def sms_scheduler():
             with mysql.connector.connect(**logs_conn_data) as con:
                 cur = con.cursor()
                 q = "update hospitalTLog set `lock`=0 where Type_Ref=%s"
-                ####for test purpose
                 cur.execute(q, (key,))
-                ####
                 con.commit()
 
 

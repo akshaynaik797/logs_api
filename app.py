@@ -1,14 +1,15 @@
 from flask import Flask, request, jsonify, url_for
 from flask_cors import CORS
 import mysql.connector
+import os
 from common import conf_conn_data, logs_conn_data, run_sms_scheduler
 
 app = Flask(__name__)
 
 cors = CORS(app)
-######for test purpose
-run_sms_scheduler()
-######
+###for test purpose
+# run_sms_scheduler()
+####
 app.config['CORS_HEADERS'] = 'Content-Type'
 app.config['referrer_url'] = None
 
@@ -16,6 +17,44 @@ app.config['referrer_url'] = None
 @app.route("/")
 def index():
     return url_for('index', _external=True)
+
+@app.route("/get_api_link", methods=["POST"])
+def get_api_link():
+    data = request.form.to_dict()
+    with mysql.connector.connect(**logs_conn_data) as con:
+        cur = con.cursor()
+        query = "SELECT apiLink FROM apisConfig where hospitalID=%s and processName=%s limit 1;"
+        cur.execute(query, (data['hospitalID'], data['processName']))
+        result = cur.fetchone()
+        if result is not None:
+            return result[0]
+    return jsonify(None)
+
+@app.route("/update_downtime", methods=["POST"])
+def update_downtime():
+    fields = ('id', 'start_time', 'fail_time', 'serial_no')
+    data = request.form.to_dict()
+    if 'start_time' not in data and 'fail_time' not in data:
+        return jsonify('pass start or fail time')
+    with mysql.connector.connect(**logs_conn_data) as con:
+        cur = con.cursor()
+        q = 'SELECT * FROM update_downtime order by id desc limit 1;'
+        cur.execute(q)
+        record = cur.fetchone()
+        tempdict = {}
+        if record is not None:
+            for i, j in zip(fields, record):
+                tempdict[i] = j
+            if tempdict['fail_time'] is not None and tempdict['start_time'] is None:
+                if 'start_time' in data:
+                    q = "update update_downtime set start_time=%s where id=%s"
+                    cur.execute(q, (data['start_time'], tempdict['id']))
+            if tempdict['start_time'] is not None:
+                if 'fail_time' in data:
+                    q = "insert into update_downtime (fail_time) values (%s)"
+                    cur.execute(q, (data['fail_time'],))
+        con.commit()
+    return jsonify('done')
 
 
 @app.route("/get_hospital_db_info", methods=["POST"])
@@ -105,6 +144,11 @@ def get_hospitaltlog():
             datadict = dict()
             for j, k in zip(field_list, i):
                 datadict[j] = k
+            q = "select descr from form_status where scode=%s limit 1"
+            cur.execute(q, (datadict['status'],))
+            result = cur.fetchone()
+            if result is not None:
+                datadict['description'] = result[0]
             records.append(datadict)
     return jsonify(records)
 
@@ -154,23 +198,6 @@ def get_apisLog():
             records.append(datadict)
     return jsonify(records)
 
-
-@app.route('/get_apisLog', methods=["POST"])
-def get_apisLog():
-    data = request.form.to_dict()
-    field_list, datadict, records = ('srno', 'dateTime','hospitalID','referenceNo','method','title','purpose','status',
-                            'request','response','error','runtime','ipAddress'), dict(), []
-    with mysql.connector.connect(**logs_conn_data) as con:
-        cur = con.cursor()
-        q = "select `srno`,`dateTime`,`hospitalID`,`referenceNo`,`method`,`title`,`purpose`,`status`,`request`,`response`,`error`,`runtime`,`ipAddress` from apisLog where dateTime between %s and %s;"
-        cur.execute(q, (data['from'], data['to']))
-        r = cur.fetchall()
-        for i in r:
-            datadict = dict()
-            for j, k in zip(field_list, i):
-                datadict[j] = k
-            records.append(datadict)
-    return jsonify(records)
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=9980)
