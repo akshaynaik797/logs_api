@@ -115,10 +115,10 @@ def trigger(refno, hospital_id, t_ype, status):
         from common import update_data_sms
         for i in master:
             if i == 'Patient':
-                no_list = fetch_p_contact_no(refno)
+                no_list = fetch_p_contact_no(refno, hosp_conn_data, hospital_id)
                 for mob_no in no_list:
                     data_dict = {}
-                    response =send_sms(mob_no, master[i]['sms'])
+                    response = send_sms(mob_no, master[i]['sms'])
                     data_dict['mobileno'] = mob_no
                     data_dict['type'] = t_ype
                     data_dict['notification_text'] = master[i]['sms']
@@ -135,7 +135,7 @@ def trigger(refno, hospital_id, t_ype, status):
                     else:
                         update_data_sms(smsTrigger='0', error='1', errorDescription=response, Type_Ref=refno)
             elif i == 'Admin':
-                p = fetch_admin_contacts()
+                p = fetch_admin_contacts(hosp_conn_data, hospital_id)
                 for mob_no, hosp_id in p:
                     if hospital_id == hosp_id or hosp_id == 'Admin':
                         data_dict = {}
@@ -156,7 +156,7 @@ def trigger(refno, hospital_id, t_ype, status):
                         else:
                             update_data_sms(smsTrigger='0', error='1', errorDescription=response, Type_Ref=refno)
             elif i == 'Hospital':
-                no_list = fetch_hosp_contacts(hospital_id)
+                no_list = fetch_hosp_contacts(hospital_id, hosp_conn_data)
                 for mob_no in no_list:
                     data_dict = {}
                     response =send_sms(mob_no, master[i]['sms'])
@@ -362,74 +362,52 @@ def fetch_sms_and_push_notification_records(refno, hospital_id):
         return e
 
 
-def fetch_p_contact_no(refno):
+def fetch_p_contact_no(refno, hosp_conn_data, hospital_id):
     try:
-        mydb = mysql.connector.connect(
-            host=dbconfig["Config"]['MYSQL_HOST'],
-            user=dbconfig["Config"]['MYSQL_USER'],
-            password=dbconfig["Config"]['MYSQL_PASSWORD'],
-            database=dbconfig["Config"]['MYSQL_DB']
-        )
-        mycursor = mydb.cursor()
-        q1 = """SELECT p_contact FROM preauth where refno='%s';""" % (refno)
-        mycursor.execute(q1)
-        no_list = mycursor.fetchall()
-        if no_list is None:
-            mycursor.close()
-            return []
-        clean = []
-        for i in no_list:
-            clean.append(i[0])
-        mycursor.close()
-        return clean
+        q = """SELECT p_contact FROM preauth where refno='%s';""" % (refno)
+        conn_data = check_table(hospital_id, 'preauth', hosp_conn_data)
+        with mysql.connector.connect(**conn_data) as con:
+            cur = con.cursor()
+            cur.execute(q)
+            no_list = cur.fetchall()
+            clean = []
+            for i in no_list:
+                clean.append(i[0])
+            return clean
     except:
         log_exceptions()
         return []
 
 
-def fetch_hosp_contacts(hospital_id):
+def fetch_hosp_contacts(hospital_id, hosp_conn_data):
     try:
-        mydb = mysql.connector.connect(
-            host=dbconfig["Config"]['MYSQL_HOST'],
-            user=dbconfig["Config"]['MYSQL_USER'],
-            password=dbconfig["Config"]['MYSQL_PASSWORD'],
-            database=dbconfig["Config"]['MYSQL_DB']
-        )
-        mycursor = mydb.cursor()
-        q1 = """SELECT he_mobile FROM hospital_employee where he_hospital_id = '%s';""" % (hospital_id)
-        mycursor.execute(q1)
-        no_list = mycursor.fetchall()
-        if no_list is None:
-            return []
-        clean = []
-        for i in no_list:
-            clean.append(i[0])
-        mycursor.close()
-        return clean
+        q = """SELECT he_mobile FROM hospital_employee where he_hospital_id = '%s';""" % (hospital_id)
+        conn_data = check_table(hospital_id, 'hospital_employee', hosp_conn_data)
+        with mysql.connector.connect(**conn_data) as con:
+            cur = con.cursor()
+            cur.execute(q)
+            no_list = cur.fetchall()
+            clean = []
+            for i in no_list:
+                clean.append(i[0])
+            return clean
     except:
         log_exceptions()
         return []
 
 
-def fetch_admin_contacts():
+def fetch_admin_contacts(hosp_conn_data, hospital_id):
     try:
-        mydb = mysql.connector.connect(
-            host=dbconfig["Config"]['MYSQL_HOST'],
-            user=dbconfig["Config"]['MYSQL_USER'],
-            password=dbconfig["Config"]['MYSQL_PASSWORD'],
-            database=dbconfig["Config"]['MYSQL_DB']
-        )
-        mycursor = mydb.cursor()
-        q1 = """SELECT type_values, receiver FROM admin_alerts where status = 1 and sendUpdate = 1 and type = 'mobile'"""
-        mycursor.execute(q1)
-        no_list = mycursor.fetchall()
-        if no_list is None:
-            return []
-        clean = []
-        for i in no_list:
-            clean.append(i)
-        mycursor.close()
-        return clean
+        q = """SELECT type_values, receiver FROM admin_alerts where status = 1 and sendUpdate = 1 and type = 'mobile'"""
+        conn_data = check_table(hospital_id, 'admin_alerts', hosp_conn_data)
+        with mysql.connector.connect(**conn_data) as con:
+            cur = con.cursor()
+            cur.execute(q)
+            no_list = cur.fetchall()
+            clean = []
+            for i in no_list:
+                clean.append(i)
+            return clean
     except:
         log_exceptions()
         return []

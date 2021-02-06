@@ -78,7 +78,6 @@ def send_sms(mobile_no, body):
         }
         r = requests.post(url=API_ENDPOINT, data=json.dumps(data), headers=headers)
         log_custom_data(filename="sms_body", no=mobile_no, body=body)
-        a = r.status_code
         return r.status_code
     except:
         log_exceptions()
