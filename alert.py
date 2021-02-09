@@ -350,16 +350,16 @@ def write_to_alert_log(data_dict):
         except:
             mobileno, t_ype, notification_text = "", "", ""
             sms, push, timestamp, messageid, error, device_token, ref_no = "", "", "", "", "", "", ""
-        mydb = mysql.connector.connect(
-            host=dbconfig["Config"]['MYSQL_HOST'],
-            user=dbconfig["Config"]['MYSQL_USER'],
-            password=dbconfig["Config"]['MYSQL_PASSWORD'],
-            database=dbconfig["Config"]['MYSQL_DB']
-        )
-        mycursor = mydb.cursor()
-        q1 = """insert into alerts_log (mobileno, type, notification_text, sms, push, timestamp, messageid, error, device_token, ref_no) values ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')"""% (mobileno, t_ype, notification_text, sms, push, timestamp, messageid, error, device_token, ref_no)
-        mycursor.execute(q1)
-        mydb.commit()
+        conn_data = {'host': "iclaimdev.caq5osti8c47.ap-south-1.rds.amazonaws.com",
+                     'user': "admin",
+                     'password': "Welcome1!",
+                     'database': 'portals'}
+        with mysql.connector.connect(**conn_data) as con:
+            cur = con.cursor()
+            q1 = """insert into alerts_log (mobileno, type, notification_text, sms, push, timestamp, messageid, error, device_token, ref_no) values ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')""" % (
+            mobileno, t_ype, notification_text, sms, push, timestamp, messageid, error, device_token, ref_no)
+            cur.execute(q1)
+            con.commit()
     except:
         log_exceptions()
         pass

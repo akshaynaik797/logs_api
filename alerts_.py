@@ -37,18 +37,24 @@ def check_table(hospital_id, table_name, current_dbconf):
         if result is not None:
             return current_dbconf
         else:
-            return get_db_conf(hosp=hospital_id)
+            dbconf = get_db_conf(hosp=hospital_id)
+            if dbconf is not None:
+                return get_db_conf(hosp=hospital_id)
+            return current_dbconf
 
 def trigger(refno, hospital_id, t_ype, status):
     try:
-        master  = dict()
-        q = f"SELECT `Type` FROM send_sms_config where statuslist LIKE '%{status}%'"
+        master = dict()
+        q = f"SELECT `Type` FROM send_sms_config where Type != 'Admin' and HospitalID=%s and statuslist LIKE '%{status}%'"
+        q1 = f"SELECT `Type` FROM send_sms_config where Type='Admin' and statuslist LIKE '%{status}%'"
         conn_data = check_table(hospital_id, 'send_sms_config', hosp_conn_data)
         with mysql.connector.connect(**conn_data) as con:
             cur = con.cursor()
-            cur.execute(q)
+            cur.execute(q, (hospital_id,))
             result = cur.fetchall()
-        user_types = [i[0] for i in result]
+            cur.execute(q1)
+            result1 = cur.fetchall()
+        user_types = [i[0] for i in result] + [i[0] for i in result1]
         sms_texts = []
         print('user types', refno, hospital_id, t_ype, status)
         for i in user_types:
@@ -68,7 +74,7 @@ def trigger(refno, hospital_id, t_ype, status):
             master[i]['worddict'] = {}
             for k in master[i]['wordlist']:
                 q = "select tableMap, tableColumn from variablesMap where variableName=%s"
-                conn_data = check_table(hospital_id, 'send_sms_config', hosp_conn_data)
+                conn_data = check_table(hospital_id, 'variablesMap', hosp_conn_data)
                 with mysql.connector.connect(**conn_data) as con:
                     cur = con.cursor()
                     cur.execute(q, (k, ))
@@ -81,7 +87,7 @@ def trigger(refno, hospital_id, t_ype, status):
                 word, table, column = j, master[i]['worddict'][j]['table'], master[i]['worddict'][j]['column']
                 if table not in ['preauth_document', 'query_document']:
                     q = "select %s from %s where refno='%s' limit 1" % (column, table, refno)
-                    conn_data = check_table(hospital_id, 'send_sms_config', hosp_conn_data)
+                    conn_data = check_table(hospital_id, table, hosp_conn_data)
                     with mysql.connector.connect(**conn_data) as con:
                         cur = con.cursor()
                         cur.execute(q)
@@ -90,7 +96,7 @@ def trigger(refno, hospital_id, t_ype, status):
                             master[i]['worddict'][j]['value'] = result[0]
                 else:
                     q = "select srno from status_track where Type_Ref=%s and Type=%s and status=%s limit 1"
-                    conn_data = check_table(hospital_id, 'send_sms_config', hosp_conn_data)
+                    conn_data = check_table(hospital_id, 'status_track', hosp_conn_data)
                     with mysql.connector.connect(**conn_data) as con:
                         cur = con.cursor()
                         cur.execute(q, (refno, t_ype, status))
@@ -98,13 +104,23 @@ def trigger(refno, hospital_id, t_ype, status):
                         if statustrackid is not None:
                             statustrackid = statustrackid[0]
                             q = "select %s from %s where statustrackid='%s' limit 1" % (column, table, statustrackid)
-                            conn_data = check_table(hospital_id, 'send_sms_config', hosp_conn_data)
+                            conn_data = check_table(hospital_id, table, hosp_conn_data)
                             with mysql.connector.connect(**conn_data) as con:
                                 cur = con.cursor()
                                 cur.execute(q)
                                 result = cur.fetchone()
                                 if result is not None:
                                     master[i]['worddict'][j]['value'] = result[0]
+        for i in master:
+            if 'insurerTPA' in master[i]['worddict']:
+                temp = master[i]['worddict']['insurerTPA']['value']
+                q = "select name from insurer_tpa_master where TPAInsurerID=%s"
+                with mysql.connector.connect(**conn_data) as con:
+                    cur = con.cursor()
+                    cur.execute(q, (temp, ))
+                    result = cur.fetchone()
+                    if result is not None:
+                        master[i]['worddict']['insurerTPA']['value'] = result[0]
         print('word value', refno, hospital_id, t_ype, status)
         for i in master:
             raw_sms, worddict = master[i]['smstext_raw'], master[i]['worddict']
@@ -118,6 +134,7 @@ def trigger(refno, hospital_id, t_ype, status):
                 no_list = fetch_p_contact_no(refno, hosp_conn_data, hospital_id)
                 for mob_no in no_list:
                     data_dict = {}
+                    print("sending sms")
                     response = send_sms(mob_no, master[i]['sms'])
                     data_dict['mobileno'] = mob_no
                     data_dict['type'] = t_ype
@@ -139,6 +156,7 @@ def trigger(refno, hospital_id, t_ype, status):
                 for mob_no, hosp_id in p:
                     if hospital_id == hosp_id or hosp_id == 'Admin':
                         data_dict = {}
+                        print("sending sms")
                         response = send_sms(mob_no, master[i]['sms'])
                         data_dict['mobileno'] = mob_no
                         data_dict['type'] = t_ype
@@ -488,28 +506,24 @@ def write_to_alert_log(data_dict):
         try:
             mobileno, t_ype, notification_text, sms = data_dict['mobileno'], data_dict['type'], data_dict[
                 'notification_text'], data_dict['sms']
-            push, timestamp, messageid, error = data_dict['push'], data_dict['timestamp'], data_dict['messageid'], \
-                                                data_dict['error']
+            push, timestamp, messageid, error = data_dict['push'], data_dict['timestamp'], data_dict['messageid'], data_dict['error']
             device_token = data_dict['device_token']
             ref_no = data_dict['ref_no']
         except:
             mobileno, t_ype, notification_text = "", "", ""
             sms, push, timestamp, messageid, error, device_token, ref_no = "", "", "", "", "", "", ""
-        mydb = mysql.connector.connect(
-            host=dbconfig["Config"]['MYSQL_HOST'],
-            user=dbconfig["Config"]['MYSQL_USER'],
-            password=dbconfig["Config"]['MYSQL_PASSWORD'],
-            database=dbconfig["Config"]['MYSQL_DB']
-        )
-        mycursor = mydb.cursor()
-        q1 = """insert into alerts_log (mobileno, type, notification_text, sms, push, timestamp, messageid, error, device_token, ref_no) values ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')""" % (
-        mobileno, t_ype, notification_text, sms, push, timestamp, messageid, error, device_token, ref_no)
-        mycursor.execute(q1)
-        mydb.commit()
+        conn_data = {'host': "iclaimdev.caq5osti8c47.ap-south-1.rds.amazonaws.com",
+                     'user': "admin",
+                     'password': "Welcome1!",
+                     'database': 'portals'}
+        with mysql.connector.connect(**conn_data) as con:
+            cur = con.cursor()
+            q1 = """insert into alerts_log (mobileno, type, notification_text, sms, push, timestamp, messageid, error, device_token, ref_no) values ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')""" % (
+            mobileno, t_ype, notification_text, sms, push, timestamp, messageid, error, device_token, ref_no)
+            cur.execute(q1)
+            con.commit()
     except:
         log_exceptions()
-        pass
-
 
 if __name__ == "__main__":
     refno, hos_id = 'MSS-1004649', '8'

@@ -7,9 +7,11 @@ from common import conf_conn_data, logs_conn_data, run_sms_scheduler
 app = Flask(__name__)
 
 cors = CORS(app)
-###for test purpose
+
+####for test purpose
 # run_sms_scheduler()
 ####
+
 app.config['CORS_HEADERS'] = 'Content-Type'
 app.config['referrer_url'] = None
 
@@ -17,6 +19,7 @@ app.config['referrer_url'] = None
 @app.route("/")
 def index():
     return url_for('index', _external=True)
+
 
 @app.route("/get_api_link", methods=["POST"])
 def get_api_link():
@@ -55,7 +58,6 @@ def update_downtime():
                     cur.execute(q, (data['fail_time'],))
         con.commit()
     return jsonify('done')
-
 
 @app.route("/get_hospital_db_info", methods=["POST"])
 def get_hospital_db_info():
@@ -135,10 +137,21 @@ def get_hospitaltlog():
                                      'status', 'HospitalID', 'cdate',
                                      'person_name', 'smsTrigger', 'pushTrigger', 'insurerID', 'fStatus', 'fLock',
                                      'lock', 'error', 'errorDescription'), dict(), []
+    q = "select `srno`, `transactionID`,`PatientID_TreatmentID`,`Type_Ref`,`Type`,`status`,`HospitalID`,`cdate`,`person_name`,`smsTrigger`,`pushTrigger`,`insurerID`,`fStatus`,`fLock`,`lock`,`error`,`errorDescription` from hospitalTLog where fStatus='I' and `fLock`='0'"
+    params = []
+    if 'fromdate' in data and 'todate' in data:
+        q = q + 'and cdate > %s and cdate < %s'
+        params = params + [data['fromdate'], data['todate']]
+    if 'hospitalid' in data:
+        q = q + 'and HospitalID=%s'
+        params = params + [data['hospitalid']]
+    if 'status' in data:
+        q = q + 'and status=%s'
+        params = params + [data['status']]
+    params = tuple(params)
     with mysql.connector.connect(**logs_conn_data) as con:
         cur = con.cursor()
-        q = "select `srno`, `transactionID`,`PatientID_TreatmentID`,`Type_Ref`,`Type`,`status`,`HospitalID`,`cdate`,`person_name`,`smsTrigger`,`pushTrigger`,`insurerID`,`fStatus`,`fLock`,`lock`,`error`,`errorDescription` from hospitalTLog where fStatus='I' and `fLock`='0';"
-        cur.execute(q)
+        cur.execute(q, params)
         r = cur.fetchall()
         for i in r:
             datadict = dict()

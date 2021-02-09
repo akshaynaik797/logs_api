@@ -56,17 +56,19 @@ def sms_scheduler():
         cur.execute(q)
         result = cur.fetchall()
     if len(result) > 0:
-        for i in result:
+        for j, i in enumerate(result):
             datadict = dict()
             for key, value in zip(field_list, i):
                 datadict[key] = value
-            records[datadict['Type_Ref']] = datadict
+            records[j] = datadict
         for key, value in records.items():
             with mysql.connector.connect(**logs_conn_data) as con:
                 cur = con.cursor()
                 q = "update hospitalTLog set `lock`= 1 where Type_Ref=%s"
-                cur.execute(q, (key,))
-                con.commit()
+                cur.execute(q, (value['Type_Ref'],))
+                ####for test purpose
+                # con.commit()
+                ####
                 q = "select descr from form_status where scode=%s limit 1"
                 cur.execute(q, (value['status'],))
                 result = cur.fetchone()
@@ -82,20 +84,21 @@ def sms_scheduler():
             with mysql.connector.connect(**logs_conn_data) as con:
                 cur = con.cursor()
                 q = "update hospitalTLog set `lock`=0 where Type_Ref=%s"
-                cur.execute(q, (key,))
-                con.commit()
+                cur.execute(q, (value['Type_Ref'],))
+                ####for test purpose
+                # con.commit()
+                ####
 
 
 def run_sms_scheduler():
     sched = BackgroundScheduler(daemon=False)
-    sched.add_job(sms_scheduler, 'interval', seconds=5, max_instances=1)
+    sched.add_job(sms_scheduler, 'interval', seconds=30, max_instances=1)
     sched.start()
 
 
 def fun():
     with open('1.txt', 'a') as fp:
         print(str(random.randint(1000, 10000)), file=fp)
-
 
 
 if __name__ == '__main__':
