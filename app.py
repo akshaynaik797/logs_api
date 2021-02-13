@@ -3,7 +3,7 @@ from flask_cors import CORS
 import mysql.connector
 import os
 from common import conf_conn_data, logs_conn_data, run_sms_scheduler
-
+from alerts_ import get_db_conf
 app = Flask(__name__)
 
 cors = CORS(app)
@@ -137,17 +137,26 @@ def get_hospitaltlog():
                                      'status', 'HospitalID', 'cdate',
                                      'person_name', 'smsTrigger', 'pushTrigger', 'insurerID', 'fStatus', 'fLock',
                                      'lock', 'error', 'errorDescription'), dict(), []
-    q = "select `srno`, `transactionID`,`PatientID_TreatmentID`,`Type_Ref`,`Type`,`status`,`HospitalID`,`cdate`,`person_name`,`smsTrigger`,`pushTrigger`,`insurerID`,`fStatus`,`fLock`,`lock`,`error`,`errorDescription` from hospitalTLog where fStatus='I' and `fLock`='0'"
+    preauth_field_list = ("preauthNo", "MemberId", "p_sname", "admission_date", "dischargedate", "flag","CurrentStatus", "cdate", "up_date")
+    q = "select `srno`, `transactionID`,`PatientID_TreatmentID`,`Type_Ref`,`Type`,`status`,`HospitalID`,`cdate`,`person_name`,`smsTrigger`,`pushTrigger`,`insurerID`,`fStatus`,`fLock`,`lock`,`error`,`errorDescription` from hospitalTLog where str_to_date(cdate,'%d/%m/%Y')>=str_to_date('12/02/2021','%d/%m/%Y') and srno is not null "
     params = []
+    #add preauth params p_sname CurrentStatus
     if 'fromdate' in data and 'todate' in data:
-        q = q + 'and cdate > %s and cdate < %s'
+        q = q + ' and cdate > %s and cdate < %s'
         params = params + [data['fromdate'], data['todate']]
     if 'hospitalid' in data:
-        q = q + 'and HospitalID=%s'
+        q = q + ' and HospitalID=%s'
         params = params + [data['hospitalid']]
     if 'status' in data:
-        q = q + 'and status=%s'
+        q = q + ' and status=%s'
         params = params + [data['status']]
+    if 'refNo' in data:
+        q = q + ' and Type_Ref=%s'
+        params = params + [data['refNo']]
+    if 'insurerID' in data:
+        q = q + ' and insurerID=%s'
+        params = params + [data['insurerID']]
+    q = q + ' order by cdate desc'
     params = tuple(params)
     with mysql.connector.connect(**logs_conn_data) as con:
         cur = con.cursor()
@@ -162,7 +171,27 @@ def get_hospitaltlog():
             result = cur.fetchone()
             if result is not None:
                 datadict['description'] = result[0]
-            records.append(datadict)
+            q = "select preauthNo, MemberId, p_sname, admission_date, dischargedate, flag, " \
+                "CurrentStatus, cdate, up_date from preauth where srno is not null "
+            params = []
+            if 'p_sname' in data:
+                q = q + ' and p_sname=%s'
+                params = params + [data['p_sname']]
+            if 'CurrentStatus' in data:
+                q = q + ' and CurrentStatus=%s'
+                params = params + [data['CurrentStatus']]
+            q = q + ' and refno=%s limit 1'
+            params = params + [datadict['Type_Ref']]
+            params = tuple(params)
+            dbconf = get_db_conf(hosp=datadict['HospitalID'])
+            with mysql.connector.connect(**dbconf) as con:
+                cur1 = con.cursor()
+                cur1.execute(q, params)
+                result = cur1.fetchone()
+                if result is not None:
+                    for key, value in zip(preauth_field_list, result):
+                        datadict[key] = value
+                    records.append(datadict)
     return jsonify(records)
 
 

@@ -67,7 +67,7 @@ def sms_scheduler():
                 q = "update hospitalTLog set `lock`= 1 where Type_Ref=%s"
                 cur.execute(q, (value['Type_Ref'],))
                 ####for test purpose
-                # con.commit()
+                con.commit()
                 ####
                 q = "select descr from form_status where scode=%s limit 1"
                 cur.execute(q, (value['status'],))
@@ -86,7 +86,7 @@ def sms_scheduler():
                 q = "update hospitalTLog set `lock`=0 where Type_Ref=%s"
                 cur.execute(q, (value['Type_Ref'],))
                 ####for test purpose
-                # con.commit()
+                con.commit()
                 ####
 
 

@@ -90,7 +90,10 @@ def trigger(refno, hospital_id, t_ype, status):
                     conn_data = check_table(hospital_id, table, hosp_conn_data)
                     with mysql.connector.connect(**conn_data) as con:
                         cur = con.cursor()
-                        cur.execute(q)
+                        try:
+                            cur.execute(q)
+                        except:
+                            z = 1
                         result = cur.fetchone()
                         if result is not None:
                             master[i]['worddict'][j]['value'] = result[0]
@@ -526,5 +529,5 @@ def write_to_alert_log(data_dict):
         log_exceptions()
 
 if __name__ == "__main__":
-    refno, hos_id = 'MSS-1004649', '8'
-    triggerAlert(refno, hos_id)
+    refno, hospital_id, t_ype, status = 'MSS-1006467', '8', 'Claim', 'Approved'
+    trigger(refno, hospital_id, t_ype, status)
