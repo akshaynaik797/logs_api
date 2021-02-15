@@ -9,7 +9,7 @@ app = Flask(__name__)
 cors = CORS(app)
 
 ####for test purpose
-# run_sms_scheduler()
+run_sms_scheduler()
 ####
 
 app.config['CORS_HEADERS'] = 'Content-Type'
@@ -138,7 +138,7 @@ def get_hospitaltlog():
                                      'person_name', 'smsTrigger', 'pushTrigger', 'insurerID', 'fStatus', 'fLock',
                                      'lock', 'error', 'errorDescription'), dict(), []
     preauth_field_list = ("preauthNo", "MemberId", "p_sname", "admission_date", "dischargedate", "flag","CurrentStatus", "cdate", "up_date")
-    q = "select `srno`, `transactionID`,`PatientID_TreatmentID`,`Type_Ref`,`Type`,`status`,`HospitalID`,`cdate`,`person_name`,`smsTrigger`,`pushTrigger`,`insurerID`,`fStatus`,`fLock`,`lock`,`error`,`errorDescription` from hospitalTLog where str_to_date(cdate,'%d/%m/%Y')>=str_to_date('12/02/2021','%d/%m/%Y') and srno is not null "
+    q = "select `srno`, `transactionID`,`PatientID_TreatmentID`,`Type_Ref`,`Type`,`status`,`HospitalID`,`cdate`,`person_name`,`smsTrigger`,`pushTrigger`,`insurerID`,`fStatus`,`fLock`,`lock`,`error`,`errorDescription` from hospitalTLog where transactionID is not null and transactionID != '' and str_to_date(cdate,'%d/%m/%Y')>=str_to_date('12/02/2021','%d/%m/%Y') and srno is not null "
     params = []
     #add preauth params p_sname CurrentStatus
     if 'fromdate' in data and 'todate' in data:
@@ -175,8 +175,8 @@ def get_hospitaltlog():
                 "CurrentStatus, cdate, up_date from preauth where srno is not null "
             params = []
             if 'p_sname' in data:
-                q = q + ' and p_sname=%s'
-                params = params + [data['p_sname']]
+                q = q + ' and p_sname like %s'
+                params = params + ['%' + data['p_sname'] + '%']
             if 'CurrentStatus' in data:
                 q = q + ' and CurrentStatus=%s'
                 params = params + [data['CurrentStatus']]
