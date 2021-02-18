@@ -137,7 +137,7 @@ def get_hospitaltlog():
                                      'status', 'HospitalID', 'cdate',
                                      'person_name', 'smsTrigger', 'pushTrigger', 'insurerID', 'fStatus', 'fLock',
                                      'lock', 'error', 'errorDescription'), dict(), []
-    preauth_field_list = ("preauthNo", "MemberId", "p_sname", "admission_date", "dischargedate", "flag","CurrentStatus", "cdate", "up_date")
+    preauth_field_list = ("preauthNo", "MemberId", "p_sname", "admission_date", "dischargedate", "flag","CurrentStatus", "cdate", "up_date", "hospital_name", "insurer_tpa", "p_policy")
     q = "select `srno`, `transactionID`,`PatientID_TreatmentID`,`Type_Ref`,`Type`,`status`,`HospitalID`,`cdate`,`person_name`,`smsTrigger`,`pushTrigger`,`insurerID`,`fStatus`,`fLock`,`lock`,`error`,`errorDescription` from hospitalTLog where transactionID is not null and transactionID != '' and str_to_date(cdate,'%d/%m/%Y')>=str_to_date('12/02/2021','%d/%m/%Y') and srno is not null "
     params = []
     #add preauth params p_sname CurrentStatus
@@ -156,7 +156,7 @@ def get_hospitaltlog():
     if 'insurerID' in data:
         q = q + ' and insurerID=%s'
         params = params + [data['insurerID']]
-    q = q + ' order by cdate desc'
+    q = q + ' order by cdate desc limit 5'
     params = tuple(params)
     with mysql.connector.connect(**logs_conn_data) as con:
         cur = con.cursor()
@@ -172,7 +172,7 @@ def get_hospitaltlog():
             if result is not None:
                 datadict['description'] = result[0]
             q = "select preauthNo, MemberId, p_sname, admission_date, dischargedate, flag, " \
-                "CurrentStatus, cdate, up_date from preauth where srno is not null "
+                "CurrentStatus, cdate, up_date, hospital_name, insurer_tpa, p_policy from preauth where srno is not null "
             params = []
             if 'p_sname' in data:
                 q = q + ' and p_sname like %s'
@@ -191,6 +191,10 @@ def get_hospitaltlog():
                 if result is not None:
                     for key, value in zip(preauth_field_list, result):
                         datadict[key] = value
+                    cur1.execute("select name from insurer_tpa_master where TPAInsurerID=%s limit 1", (datadict['insurer_tpa'],))
+                    r1 = cur1.fetchone()
+                    if r1 is not None:
+                        datadict['insurer_tpa'] = r1[0]
                     records.append(datadict)
     return jsonify(records)
 
