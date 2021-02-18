@@ -1,3 +1,4 @@
+import requests
 from flask import Flask, request, jsonify, url_for
 from flask_cors import CORS
 import mysql.connector
@@ -175,12 +176,20 @@ def get_hospitaltlog():
             r1 = cur.fetchone()
             if r1 is not None:
                 datadict['insurer_tpa'] = r1[0]
+            if 'p_sname' in data:
+                url = 'http://3.7.8.68:9982/api/get_from_name1'
+                myobj = {'hospital_id': data['hospitalid'], 'insid': datadict['insurerID'], 'name': data['p_sname']}
+                x = requests.post(url, data=myobj)
+                temp = x.json()
+                if len(temp) > 0:
+                    for k, v in temp[0].items():
+                        datadict[k] = v
             q = "select preauthNo, MemberId, p_sname, admission_date, dischargedate, flag, " \
                 "CurrentStatus, cdate, up_date, hospital_name, p_policy from preauth where srno is not null "
             params = []
-            if 'p_sname' in data:
-                q = q + ' and p_sname like %s'
-                params = params + ['%' + data['p_sname'] + '%']
+            # if 'p_sname' in data:
+            #     q = q + ' and p_sname like %s'
+            #     params = params + ['%' + data['p_sname'] + '%']
             if 'CurrentStatus' in data:
                 q = q + ' and CurrentStatus=%s'
                 params = params + [data['CurrentStatus']]
@@ -195,7 +204,7 @@ def get_hospitaltlog():
                 if result is not None:
                     for key, value in zip(preauth_field_list, result):
                         datadict[key] = value
-                    records.append(datadict)
+            records.append(datadict)
     return jsonify(records)
 
 
