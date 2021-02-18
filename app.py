@@ -10,7 +10,7 @@ app = Flask(__name__)
 cors = CORS(app)
 
 ####for test purpose
-run_sms_scheduler()
+# run_sms_scheduler()
 ####
 
 app.config['CORS_HEADERS'] = 'Content-Type'
@@ -184,27 +184,29 @@ def get_hospitaltlog():
                 if len(temp) > 0:
                     for k, v in temp[0].items():
                         datadict[k] = v
-            q = "select preauthNo, MemberId, p_sname, admission_date, dischargedate, flag, " \
-                "CurrentStatus, cdate, up_date, hospital_name, p_policy from preauth where srno is not null "
-            params = []
-            # if 'p_sname' in data:
-            #     q = q + ' and p_sname like %s'
-            #     params = params + ['%' + data['p_sname'] + '%']
-            if 'CurrentStatus' in data:
-                q = q + ' and CurrentStatus=%s'
-                params = params + [data['CurrentStatus']]
-            q = q + ' and refno=%s limit 1'
-            params = params + [datadict['Type_Ref']]
-            params = tuple(params)
-            dbconf = get_db_conf(hosp=datadict['HospitalID'])
-            with mysql.connector.connect(**dbconf) as con:
-                cur1 = con.cursor()
-                cur1.execute(q, params)
-                result = cur1.fetchone()
-                if result is not None:
-                    for key, value in zip(preauth_field_list, result):
-                        datadict[key] = value
-            records.append(datadict)
+                    records.append(datadict)
+            else:
+                q = "select preauthNo, MemberId, p_sname, admission_date, dischargedate, flag, " \
+                    "CurrentStatus, cdate, up_date, hospital_name, p_policy from preauth where srno is not null "
+                params = []
+                # if 'p_sname' in data:
+                #     q = q + ' and p_sname like %s'
+                #     params = params + ['%' + data['p_sname'] + '%']
+                if 'CurrentStatus' in data:
+                    q = q + ' and CurrentStatus=%s'
+                    params = params + [data['CurrentStatus']]
+                q = q + ' and refno=%s limit 1'
+                params = params + [datadict['Type_Ref']]
+                params = tuple(params)
+                dbconf = get_db_conf(hosp=datadict['HospitalID'])
+                with mysql.connector.connect(**dbconf) as con:
+                    cur1 = con.cursor()
+                    cur1.execute(q, params)
+                    result = cur1.fetchone()
+                    if result is not None:
+                        for key, value in zip(preauth_field_list, result):
+                            datadict[key] = value
+                records.append(datadict)
     return jsonify(records)
 
 
