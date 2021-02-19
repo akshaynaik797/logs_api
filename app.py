@@ -10,7 +10,7 @@ app = Flask(__name__)
 cors = CORS(app)
 
 ####for test purpose
-# run_sms_scheduler()
+run_sms_scheduler()
 ####
 
 app.config['CORS_HEADERS'] = 'Content-Type'
@@ -131,6 +131,41 @@ def update_hospitaltlog():
         con.commit()
     return jsonify('success')
 
+@app.route('/getpatientdetailsbyname', methods=["POST"])
+def getpatientdetailsbyname():
+    data = request.form.to_dict()
+    field_list, datadict, records = ('srno', 'transactionID', 'PatientID_TreatmentID', 'Type_Ref', 'Type',
+                                     'status', 'HospitalID', 'cdate',
+                                     'person_name', 'smsTrigger', 'pushTrigger', 'insurerID', 'fStatus', 'fLock',
+                                     'lock', 'error', 'errorDescription'), dict(), []
+    if 'p_sname' in data and 'hospitalid' in data:
+        url = 'http://3.7.8.68:9982/api/get_from_name1'
+        myobj = {'hospital_id': data['hospitalid'], 'name': data['p_sname']}
+        x = requests.post(url, data=myobj)
+        temp = x.json()
+        for record in temp:
+            datadict = {}
+            for k, v in record.items():
+                datadict[k] = v
+            datadict['transactionID'] = ""
+            q = "select transactionID from hospitalTLog where Type_Ref=%s union select transactionID from hospitalTLogDel where Type_Ref=%s"
+            with mysql.connector.connect(**logs_conn_data) as con:
+                cur = con.cursor()
+                cur.execute(q, (datadict['refno'], datadict['refno']))
+                r = cur.fetchall()
+                if len(r) > 0:
+                    datadict['transactionID'] = r[-1][0]
+                cur.execute("select name from insurer_tpa_master where TPAInsurerID=%s limit 1",
+                            (datadict['insurerID'],))
+                r1 = cur.fetchone()
+                if r1 is not None:
+                    datadict['insurer_tpa'] = r1[0]
+            for i in field_list:
+                if i not in datadict:
+                    datadict[i] = ""
+            records.append(datadict)
+    return jsonify(records)
+
 @app.route('/get_hospitaltlog', methods=["POST"])
 def get_hospitaltlog():
     data = request.form.to_dict()
@@ -139,6 +174,7 @@ def get_hospitaltlog():
                                      'person_name', 'smsTrigger', 'pushTrigger', 'insurerID', 'fStatus', 'fLock',
                                      'lock', 'error', 'errorDescription'), dict(), []
     preauth_field_list = ("preauthNo", "MemberId", "p_sname", "admission_date", "dischargedate", "flag","CurrentStatus", "cdate", "up_date", "hospital_name", "p_policy")
+
     q = "select `srno`, `transactionID`,`PatientID_TreatmentID`,`Type_Ref`,`Type`,`status`,`HospitalID`,`cdate`,`person_name`,`smsTrigger`,`pushTrigger`,`insurerID`,`fStatus`,`fLock`,`lock`,`error`,`errorDescription` from hospitalTLog where transactionID is not null and transactionID != '' and str_to_date(cdate,'%d/%m/%Y')>=str_to_date('12/02/2021','%d/%m/%Y') and srno is not null "
     params = []
     #add preauth params p_sname CurrentStatus
@@ -176,37 +212,30 @@ def get_hospitaltlog():
             r1 = cur.fetchone()
             if r1 is not None:
                 datadict['insurer_tpa'] = r1[0]
+            q = "select preauthNo, MemberId, p_sname, admission_date, dischargedate, flag, " \
+                "CurrentStatus, cdate, up_date, hospital_name, p_policy from preauth where srno is not null "
+            params = []
             if 'p_sname' in data:
-                url = 'http://3.7.8.68:9982/api/get_from_name1'
-                myobj = {'hospital_id': data['hospitalid'], 'insid': datadict['insurerID'], 'name': data['p_sname']}
-                x = requests.post(url, data=myobj)
-                temp = x.json()
-                if len(temp) > 0:
-                    for k, v in temp[0].items():
-                        datadict[k] = v
-                    records.append(datadict)
-            else:
-                q = "select preauthNo, MemberId, p_sname, admission_date, dischargedate, flag, " \
-                    "CurrentStatus, cdate, up_date, hospital_name, p_policy from preauth where srno is not null "
-                params = []
-                # if 'p_sname' in data:
-                #     q = q + ' and p_sname like %s'
-                #     params = params + ['%' + data['p_sname'] + '%']
-                if 'CurrentStatus' in data:
-                    q = q + ' and CurrentStatus=%s'
-                    params = params + [data['CurrentStatus']]
-                q = q + ' and refno=%s limit 1'
-                params = params + [datadict['Type_Ref']]
-                params = tuple(params)
-                dbconf = get_db_conf(hosp=datadict['HospitalID'])
-                with mysql.connector.connect(**dbconf) as con:
-                    cur1 = con.cursor()
-                    cur1.execute(q, params)
-                    result = cur1.fetchone()
-                    if result is not None:
-                        for key, value in zip(preauth_field_list, result):
-                            datadict[key] = value
-                records.append(datadict)
+                q = q + ' and p_sname like %s'
+                params = params + ['%' + data['p_sname'] + '%']
+            if 'CurrentStatus' in data:
+                q = q + ' and CurrentStatus=%s'
+                params = params + [data['CurrentStatus']]
+            q = q + ' and refno=%s limit 1'
+            params = params + [datadict['Type_Ref']]
+            params = tuple(params)
+            dbconf = get_db_conf(hosp=datadict['HospitalID'])
+            with mysql.connector.connect(**dbconf) as con:
+                cur1 = con.cursor()
+                cur1.execute(q, params)
+                result = cur1.fetchone()
+                if result is not None:
+                    for key, value in zip(preauth_field_list, result):
+                        datadict[key] = value
+                else:
+                    for key in preauth_field_list:
+                        datadict[key] = ""
+            records.append(datadict)
     return jsonify(records)
 
 
