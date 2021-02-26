@@ -10,7 +10,7 @@ app = Flask(__name__)
 cors = CORS(app)
 
 ####for test purpose
-run_sms_scheduler()
+# run_sms_scheduler()
 ####
 
 app.config['CORS_HEADERS'] = 'Content-Type'
@@ -20,6 +20,19 @@ app.config['referrer_url'] = None
 @app.route("/")
 def index():
     return url_for('index', _external=True)
+
+
+@app.route("/gethospitalid", methods=["POST"])
+def gethospitalid():
+    data = request.form.to_dict()
+    with mysql.connector.connect(**logs_conn_data) as con:
+        cur = con.cursor()
+        q = "select hospitalID from hospitallist where hospitalName=%s limit 1"
+        cur.execute(q, (data['hospitalName'],))
+        result = cur.fetchone()
+        if result is not None:
+            return result[0]
+    return jsonify(None)
 
 
 @app.route("/get_api_link", methods=["POST"])
