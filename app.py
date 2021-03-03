@@ -31,8 +31,8 @@ def gethospitalid():
         cur.execute(q, (data['hospitalName'],))
         result = cur.fetchone()
         if result is not None:
-            return result[0]
-    return jsonify(None)
+            return {"hospitalID": result[0]}
+    return {"error": "not found"}
 
 
 @app.route("/get_api_link", methods=["POST"])
@@ -44,8 +44,8 @@ def get_api_link():
         cur.execute(query, (data['hospitalID'], data['processName']))
         result = cur.fetchone()
         if result is not None:
-            return result[0]
-    return jsonify(None)
+            return {'link': result[0]}
+    return jsonify({'error': 'record not found'})
 
 @app.route("/update_downtime", methods=["POST"])
 def update_downtime():
@@ -192,8 +192,9 @@ def get_hospitaltlog():
     params = []
     #add preauth params p_sname CurrentStatus
     if 'fromdate' in data and 'todate' in data:
-        q = q + ' and cdate > %s and cdate < %s'
-        params = params + [data['fromdate'], data['todate']]
+        fmt = '%d/%m/%Y %H:%i:%s'
+        q = q + " and str_to_date(cdate, %s) BETWEEN str_to_date(%s, %s) AND str_to_date(%s, %s)"
+        params = params + [fmt, data['fromdate'], fmt, data['todate'], fmt]
     if 'hospitalid' in data:
         q = q + ' and HospitalID=%s'
         params = params + [data['hospitalid']]
