@@ -256,8 +256,8 @@ def get_hospitaltlog():
 
 @app.route('/modify_apisLog', methods=["POST"])
 def modify_apisLog():
-    field_list, datadict = ('hospitalID','referenceNo','method','title','purpose','status',
-                            'request','response','error','runtime','ipAddress'), dict()
+    field_list, datadict = ('dateTime', 'hospitalID','referenceNo','method','title','purpose','status',
+                            'request','response','error','runtime','ipAddress', 'transactionID'), dict()
     for i in field_list:
         datadict[i] = ' '
     data = request.form.to_dict()
@@ -273,7 +273,7 @@ def modify_apisLog():
         #logic for diif hospitals
         with mysql.connector.connect(**logs_conn_data) as con:
             cur = con.cursor()
-            q = "INSERT INTO apisLog (`hospitalID`,`referenceNo`,`method`,`title`,`purpose`,`status`,`request`,`response`,`error`,`runtime`,`ipAddress`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"
+            q = "INSERT INTO apisLog (`dateTime`,`hospitalID`,`referenceNo`,`method`,`title`,`purpose`,`status`,`request`,`response`,`error`,`runtime`,`ipAddress`,transactionID) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"
             cur.execute(q, record_data)
             con.commit()
     return jsonify('success')
