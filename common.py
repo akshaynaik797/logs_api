@@ -17,6 +17,11 @@ logs_conn_data = {'host': "iclaimdev.caq5osti8c47.ap-south-1.rds.amazonaws.com",
                   'password': "Welcome1!",
                   'database': 'portals'}
 
+p_conn_data = {'host': "iclaimdev.caq5osti8c47.ap-south-1.rds.amazonaws.com",
+                  'user': "admin",
+                  'password': "Welcome1!",
+                  'database': 'python'}
+
 
 def get_db_info(hospital_id):
     field_list, records = ('srno', 'environment', 'hospitalID', 'host', 'dbName', 'port', 'userName', 'password',

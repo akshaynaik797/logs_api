@@ -1,9 +1,9 @@
 import requests
-from flask import Flask, request, jsonify, url_for
+from flask import Flask, request, jsonify, url_for, send_from_directory
 from flask_cors import CORS
 import mysql.connector
 import os
-from common import conf_conn_data, logs_conn_data, run_sms_scheduler
+from common import conf_conn_data, logs_conn_data, run_sms_scheduler, p_conn_data
 from alerts_ import get_db_conf
 app = Flask(__name__)
 
@@ -21,6 +21,60 @@ app.config['referrer_url'] = None
 def index():
     return url_for('index', _external=True)
 
+# @app.route('/attachments/<filename>')
+# def attachments(filename):
+#     fol, file = os.path.split(filename)
+#     return send_from_directory(fol, file, mimetype='application/pdf')
+
+
+@app.route("/api/downloadfile")
+def get_file():
+    """Download a file."""
+    if request.args['filename'] != None:
+        filepath = request.args['filename']
+        print("path=", filepath)
+        # log_api_data('filepath', filepath)
+        # filepath1=r"C:\Users\91798\Desktop\trial_shikha-master2\hdfc\attachments_pdf_denial\PreAuthDenialLe_RC-HS19-10809032_1_202_20200129142830250_19897.pdf"
+        filepath = filepath.replace("\\", "/")
+        mylist = filepath.split('/')
+        filename = mylist[-1]
+        index = 0
+        dirname = ''
+        for x in mylist:
+            index = index + 1
+            if index != len(mylist):
+                dirname = dirname + x + '/'
+        # return send_from_directory(r"C:\Users\91798\Desktop\download\templates", filename='ASHISHKUMAR_IT.pdf', as_attachment=True)
+        return send_from_directory(dirname, filename=filename, as_attachment=True, mimetype='application/pdf')
+
+
+@app.route("/getsettlementmails", methods=["POST"])
+def get_settlement_mails():
+    link_text = request.url_root + 'api/downloadfile?filename='
+    data = request.form.to_dict()
+    data_list, fields = [], ('sno', 'subject', 'date', 'attach_path')
+    with mysql.connector.connect(**p_conn_data) as con:
+        cur = con.cursor()
+        q = "SELECT sno, subject, date, attach_path FROM settlement_mails where hospital=%s and completed=%s"
+        cur.execute(q, (data['hospital'], data['flag']))
+        r = cur.fetchall()
+        for row in r:
+            temp = {}
+            for k, v in zip(fields, row):
+                temp[k] = v
+            temp['attach_path'] = link_text + temp['attach_path']
+            data_list.append(temp)
+    return jsonify(data_list)
+
+@app.route("/setsettlementmails", methods=["POST"])
+def set_settlement_mails():
+    data = request.form.to_dict()
+    with mysql.connector.connect(**p_conn_data) as con:
+        cur = con.cursor()
+        q = "update settlement_mails set completed=%s where sno=%s"
+        cur.execute(q, (data['flag'], data['flag']))
+        con.commit()
+    return jsonify('done')
 
 @app.route("/gethospitalid", methods=["POST"])
 def gethospitalid():
@@ -33,7 +87,6 @@ def gethospitalid():
         if result is not None:
             return {"hospitalID": result[0]}
     return {"error": "not found"}
-
 
 @app.route("/get_api_link", methods=["POST"])
 def get_api_link():
