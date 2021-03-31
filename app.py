@@ -48,6 +48,25 @@ def get_file():
         return send_from_directory(dirname, filename=filename, as_attachment=True, mimetype='application/pdf')
 
 
+@app.route("/getupdationdetaillogcopy", methods=["POST"])
+def getupdationdetaillogcopy():
+    data_list = []
+    link_text = request.url_root + 'api/downloadfile?filename='
+    fields = ("runno","insurerid","process","downloadtime","starttime","endtime","emailsubject","date","fieldreadflag","failedfields","apicalledflag","apiparameter","apiresult","sms","error","row_no","emailid","completed","file_path","mail_id","hos_id","preauthid","amount","status","lettertime","policyno","memberid","comment","time_difference","diagno","insname","doa","dod","corp","polhol","jobid","time_difference2","weightage")
+    data = request.form.to_dict()
+    q = "select * from updation_detail_log_copy where date between %s and %s and hos_id=%s and completed=%s"
+    with mysql.connector.connect(**p_conn_data) as con:
+        cur = con.cursor()
+        cur.execute(q, (data['fromtime'], data['totime'], data['hospital'], data['flag']))
+        r = cur.fetchall()
+        for row in r:
+            temp = {}
+            for k, v in zip(fields, row):
+                temp[k] = v
+            temp['file_path'] = link_text + temp['file_path']
+            data_list.append(temp)
+    return jsonify(data_list)
+
 @app.route("/getsettlementmails", methods=["POST"])
 def get_settlement_mails():
     link_text = request.url_root + 'api/downloadfile?filename='
