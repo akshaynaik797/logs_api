@@ -49,15 +49,29 @@ def get_file():
 
 
 @app.route("/getupdationdetaillogcopy", methods=["POST"])
-def getupdationdetaillogcopy():
+def get_updation_detail_log_copy():
     data_list = []
+    date_format = '%d/%m/%Y %H:%i:%s'
     link_text = request.url_root + 'api/downloadfile?filename='
     fields = ("runno","insurerid","process","downloadtime","starttime","endtime","emailsubject","date","fieldreadflag","failedfields","apicalledflag","apiparameter","apiresult","sms","error","row_no","emailid","completed","file_path","mail_id","hos_id","preauthid","amount","status","lettertime","policyno","memberid","comment","time_difference","diagno","insname","doa","dod","corp","polhol","jobid","time_difference2","weightage")
     data = request.form.to_dict()
-    q = "select * from updation_detail_log_copy where date between %s and %s and hos_id=%s and completed=%s"
+    q = "select * from updation_detail_log_copy where " \
+        "STR_TO_DATE(date, %s) between " \
+        "STR_TO_DATE(%s, %s) and STR_TO_DATE(%s, %s) "
+    params = [date_format, data['fromtime'], date_format, data['totime'], date_format]
+    if 'hospital' in data:
+        q = q + ' and hos_id=%s '
+        params.append(data['hospital'])
+    if 'refno' in data:
+        q = q + ' and refno=%s '
+        params.append(data['refno'])
+    if 'flag' in data:
+        q = q + " and completed=%s "
+        params.append(data['flag'])
+    params = tuple(params)
     with mysql.connector.connect(**p_conn_data) as con:
         cur = con.cursor()
-        cur.execute(q, (data['fromtime'], data['totime'], data['hospital'], data['flag']))
+        cur.execute(q, params)
         r = cur.fetchall()
         for row in r:
             temp = {}
