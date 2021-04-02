@@ -53,7 +53,7 @@ def get_updation_detail_log_copy():
     data_list = []
     date_format = '%d/%m/%Y %H:%i:%s'
     link_text = request.url_root + 'api/downloadfile?filename='
-    fields = ("runno","insurerid","process","downloadtime","starttime","endtime","emailsubject","date","fieldreadflag","failedfields","apicalledflag","apiparameter","apiresult","sms","error","row_no","emailid","completed","file_path","mail_id","hos_id","preauthid","amount","status","lettertime","policyno","memberid","comment","time_difference","diagno","insname","doa","dod","corp","polhol","jobid","time_difference2","weightage")
+    fields = ("runno","insurerid","process","downloadtime","starttime","endtime","emailsubject","date","fieldreadflag","failedfields","apicalledflag","apiparameter","apiresult","sms","error","row_no","emailid","completed","file_path","mail_id","hos_id","preauthid","amount","status","lettertime","policyno","memberid","comment","time_difference","diagno","insname","doa","dod","corp","polhol","jobid","time_difference2","weightage", "refno")
     data = request.form.to_dict()
     q = "select * from updation_detail_log_copy where " \
         "STR_TO_DATE(date, %s) between " \
