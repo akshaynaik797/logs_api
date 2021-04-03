@@ -124,6 +124,7 @@ def gethospitalid():
 @app.route("/getsentmaillogs", methods=["POST"])
 def get_sentmaillogs():
     #flag, push_content
+    date_format = '%d/%m/%Y %H:%i:%s'
     fields = ("sno","transactionID","refNo","cdate","doc_count","push_content","push_success","flag","comment")
     data_dict = []
     data = request.form.to_dict()
@@ -135,11 +136,17 @@ def get_sentmaillogs():
         params.append(data['flag'])
 
     if 'pushcontent' in data:
-        if data['pushcontent'] != '_blank':
+        if data['pushcontent'] == '_blank':
+            q = q + " and  push_content is null or push_content = ''"
+        elif data['pushcontent'] == '_notblank':
+            q = q + " and push_content != ''"
+        else:
             q = q + ' and push_content like %s'
             params.append('%' + data['pushcontent'] + '%')
-        else:
-            q = q + " and  push_content is null or push_content = ''"
+
+    if 'fromtime' in data and 'totime' in data:
+        q = q + " and STR_TO_DATE(cdate, %s) between STR_TO_DATE(%s, %s) and STR_TO_DATE(%s, %s)"
+        params = params + [date_format, data['fromtime'], date_format, data['totime'], date_format]
 
     with mysql.connector.connect(**logs_conn_data) as con:
         cur = con.cursor()
