@@ -1,7 +1,13 @@
-import requests
+import mysql.connector
 
-url = 'http://3.7.8.68:9982/api/get_from_name1'
-myobj = {'hospital_id': '8900080427990', 'insid': 'I14', 'name': 'n'}
-x = requests.post(url, data = myobj)
-a = x.json()
-pass
+from common import logs_conn_data
+
+q = "SELECT * FROM sentmaillogs where sno is not null limit 10 "
+params = []
+
+
+with mysql.connector.connect(**logs_conn_data) as con:
+    cur = con.cursor()
+    cur.execute(q, params)
+    result = cur.fetchall()
+    pass

@@ -121,6 +121,62 @@ def gethospitalid():
             return {"hospitalID": result[0]}
     return {"error": "not found"}
 
+@app.route("/getsentmaillogs", methods=["POST"])
+def get_sentmaillogs():
+    #flag, push_content
+    fields = ("sno","transactionID","refNo","cdate","doc_count","push_content","push_success","flag","comment")
+    data_dict = []
+    data = request.form.to_dict()
+
+    q = "SELECT * FROM sentmaillogs where sno is not null "
+    params = []
+    if 'flag' in data:
+        q = q + " and flag=%s"
+        params.append(data['flag'])
+
+    if 'pushcontent' in data:
+        if data['pushcontent'] != '_blank':
+            q = q + ' and push_content like %s'
+            params.append('%' + data['pushcontent'] + '%')
+        else:
+            q = q + " and  push_content is null or push_content = ''"
+
+    with mysql.connector.connect(**logs_conn_data) as con:
+        cur = con.cursor()
+        cur.execute(q, params)
+        result = cur.fetchall()
+        for row in result:
+            temp = {}
+            for k, v in zip(fields, row):
+                temp[k] = v
+            data_dict.append(temp)
+    return jsonify(data_dict)
+
+@app.route("/setsentmaillogs", methods=["POST"])
+def set_sentmaillogs():
+    #flag comment sno
+    data = request.form.to_dict()
+    q = "update sentmaillogs "
+    params = []
+    if 'flag' in data and 'comment' in data:
+        q = q + ' set flag=%s, comment=%s'
+        params.extend([data['flag'], data['comment']])
+    elif 'flag' in data:
+        q = q + ' set flag=%s'
+        params.append(data['flag'])
+    elif 'comment' in data:
+        q = q + ' set comment=%s'
+        params.append(data['comment'])
+    q1 = " where sno=%s"
+    params.append(data['sno'])
+    q = q + q1
+    with mysql.connector.connect(**logs_conn_data) as con:
+        cur = con.cursor()
+        cur.execute(q, params)
+        con.commit()
+    return {"msg": "done"}
+
+
 @app.route("/get_api_link", methods=["POST"])
 def get_api_link():
     data = request.form.to_dict()
