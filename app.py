@@ -17,9 +17,9 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 app.config['referrer_url'] = None
 
 
-@app.route("/")
+@app.route("/", methods=["POST", "GET"])
 def index():
-    return url_for('index', _external=True)
+    return "this is logs api"
 
 # @app.route('/attachments/<filename>')
 # def attachments(filename):
