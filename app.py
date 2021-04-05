@@ -124,12 +124,13 @@ def gethospitalid():
 @app.route("/getsentmaillogs", methods=["POST"])
 def get_sentmaillogs():
     #flag, push_content
+    # query add flag = null
     date_format = '%d/%m/%Y %H:%i:%s'
     fields = ("sno","transactionID","refNo","cdate","doc_count","push_content","push_success","flag","comment")
     data_dict = []
     data = request.form.to_dict()
 
-    q = "SELECT * FROM sentmaillogs where sno is not null "
+    q = "SELECT * FROM sentmaillogs where flag is null "
     params = []
     if 'flag' in data:
         q = q + " and flag=%s"
