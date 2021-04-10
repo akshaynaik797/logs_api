@@ -85,11 +85,28 @@ def get_updation_detail_log_copy():
 def get_settlement_mails():
     link_text = request.url_root + 'api/downloadfile?filename='
     data = request.form.to_dict()
-    data_list, fields = [], ('sno', 'subject', 'date', 'attach_path')
+    data_list, fields, params = [], ('sno', 'subject', 'date', 'attach_path'), []
+    q = "SELECT sno, subject, date, attach_path FROM settlement_mails where id is not null"
+    if 'hospital' in data:
+        q = q + ' and hospital=%s'
+        params.append(data['hospital'])
+    if 'completed' in data:
+        q = q + ' and completed=%s'
+        params.append(data['completed'])
+    if 'insurer' in data:
+        q1 = "select email_ids.email_ids from email_ids inner join IC_name on " \
+             "email_ids.ic = IC_name.IC and IC_name.IC_name=%s"
+        with mysql.connector.connect(**p_conn_data) as con:
+            cur = con.cursor()
+            cur.execute(q1, (data['insurer'],))
+            result = cur.fetchall()
+            email_list = [i[0] for i in result]
+            q = q + ' and sender in (' + ','.join(['%s' for i in email_list]) + ')'
+            params.extend(email_list)
+
     with mysql.connector.connect(**p_conn_data) as con:
         cur = con.cursor()
-        q = "SELECT sno, subject, date, attach_path FROM settlement_mails where hospital=%s and completed=%s"
-        cur.execute(q, (data['hospital'], data['flag']))
+        cur.execute(q, params)
         r = cur.fetchall()
         for row in r:
             temp = {}
