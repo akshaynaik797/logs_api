@@ -90,9 +90,9 @@ def get_settlement_mails():
     if 'hospital' in data:
         q = q + ' and hospital=%s'
         params.append(data['hospital'])
-    if 'completed' in data:
+    if 'flag' in data:
         q = q + ' and completed=%s'
-        params.append(data['completed'])
+        params.append(data['flag'])
     if 'insurer' in data:
         q1 = "select email_ids.email_ids from email_ids inner join IC_name on " \
              "email_ids.ic = IC_name.IC and IC_name.IC_name=%s"
