@@ -94,15 +94,9 @@ def get_settlement_mails():
         q = q + ' and completed=%s'
         params.append(data['flag'])
     if 'insurer' in data:
-        q1 = "select email_ids.email_ids from email_ids inner join IC_name on " \
-             "email_ids.ic = IC_name.IC and IC_name.IC_name=%s"
-        with mysql.connector.connect(**p_conn_data) as con:
-            cur = con.cursor()
-            cur.execute(q1, (data['insurer'],))
-            result = cur.fetchall()
-            email_list = [i[0] for i in result]
-            q = q + ' and sender in (' + ','.join(['%s' for i in email_list]) + ')'
-            params.extend(email_list)
+        q = q + ' and attach_path like %s'
+        params.append('%' + data['insurer'] + '%')
+
 
     with mysql.connector.connect(**p_conn_data) as con:
         cur = con.cursor()
