@@ -120,6 +120,48 @@ def set_settlement_mails():
         con.commit()
     return jsonify('done')
 
+@app.route("/getstgsettlementmails", methods=["POST"])
+def get_stg_settlement_mails():
+    link_text = request.url_root + 'api/downloadfile?filename='
+    # data = request.form.to_dict()
+    fields = ("srno", "InsurerID", "ALNO", "ClaimNo", "UTRNo", "NetPayable", "Transactiondate", "attach_path")
+    data_list = []
+
+    q = "SELECT stgSettlement.srno, stgSettlement.InsurerID, stgSettlement.ALNO, stgSettlement.ClaimNo, stgSettlement.UTRNo, stgSettlement.NetPayable, stgSettlement.Transactiondate, settlement_mails.attach_path  FROM stgSettlement  INNER JOIN settlement_mails  ON stgSettlement.sett_table_sno = settlement_mails.sno  where InsurerID = '' or ALNO = '' or ClaimNo = '' or UTRNo = '' or NetPayable = '' or Transactiondate = '';"
+
+    with mysql.connector.connect(**p_conn_data) as con:
+        cur = con.cursor()
+        cur.execute(q)
+        r = cur.fetchall()
+        for row in r:
+            temp = {}
+            for k, v in zip(fields, row):
+                temp[k] = v
+            temp['attach_path'] = link_text + temp['attach_path']
+            data_list.append(temp)
+    return jsonify(data_list)
+
+@app.route("/setstgsettlementmails", methods=["POST"])
+def set_stg_settlement_mails():
+    data = request.form.to_dict()
+    fields = ("InsurerID", "ALNO", "ClaimNo", "UTRNo", "NetPayable", "Transactiondate")
+    data_list = []
+
+    if 'srno' in data:
+        q = "update stgSettlement set "
+        params = []
+        for i in fields:
+            if i in data:
+                q = q + i + "=" + '%s,'
+                params.append(data[i])
+        q = q.strip(',') + " where srno=%s"
+        params.append(data['srno'])
+        with mysql.connector.connect(**p_conn_data) as con:
+            cur = con.cursor()
+            cur.execute(q, params)
+            con.commit()
+        return jsonify(data_list)
+
 @app.route("/gethospitalid", methods=["POST"])
 def gethospitalid():
     data = request.form.to_dict()
