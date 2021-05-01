@@ -123,15 +123,15 @@ def set_settlement_mails():
 @app.route("/getstgsettlementmails", methods=["POST"])
 def get_stg_settlement_mails():
     link_text = request.url_root + 'api/downloadfile?filename='
-    # data = request.form.to_dict()
+    data = request.form.to_dict()
     fields = ("srno", "InsurerID", "ALNO", "ClaimNo", "UTRNo", "NetPayable", "Transactiondate", "attach_path")
     data_list = []
 
-    q = "SELECT stgSettlement.srno, stgSettlement.InsurerID, stgSettlement.ALNO, stgSettlement.ClaimNo, stgSettlement.UTRNo, stgSettlement.NetPayable, stgSettlement.Transactiondate, settlement_mails.attach_path  FROM stgSettlement  INNER JOIN settlement_mails  ON stgSettlement.sett_table_sno = settlement_mails.sno  where InsurerID = '' or ALNO = '' or ClaimNo = '' or UTRNo = '' or NetPayable = '' or Transactiondate = '';"
+    q = "SELECT stgSettlement.srno, stgSettlement.InsurerID, stgSettlement.ALNO, stgSettlement.ClaimNo, stgSettlement.UTRNo, stgSettlement.NetPayable, stgSettlement.Transactiondate, settlement_mails.attach_path  FROM stgSettlement  INNER JOIN settlement_mails  ON stgSettlement.sett_table_sno = settlement_mails.sno  where InsurerID = '' or ALNO = '' or ClaimNo = '' or UTRNo = '' or NetPayable = '' or Transactiondate = '' and hospital=%s;"
 
     with mysql.connector.connect(**p_conn_data) as con:
         cur = con.cursor()
-        cur.execute(q)
+        cur.execute(q, (data['hospital'],))
         r = cur.fetchall()
         for row in r:
             temp = {}
