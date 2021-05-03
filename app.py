@@ -127,12 +127,13 @@ def get_stg_settlement_mails():
     fields = ("srno", "InsurerID", "ALNO", "ClaimNo", "UTRNo", "NetPayable", "Transactiondate", "attach_path")
     data_list = []
 
-    q = "SELECT stgSettlement.srno, stgSettlement.InsurerID, stgSettlement.ALNO, stgSettlement.ClaimNo, " \
-        "stgSettlement.UTRNo, stgSettlement.NetPayable, stgSettlement.Transactiondate, settlement_mails.attach_path" \
-        "  FROM stgSettlement  INNER JOIN settlement_mails  ON stgSettlement.sett_table_sno = settlement_mails.sno" \
-        "  where InsurerID = '' or ALNO = '' or ClaimNo = '' or UTRNo = '' or NetPayable = '' or Transactiondate = '' " \
-        "and settlement_mails.hospital=%s;"
-    params = [data['hospital']]
+    if 'hospital' in data:
+        q = "SELECT stgSettlement.srno, stgSettlement.InsurerID, stgSettlement.ALNO, stgSettlement.ClaimNo, " \
+            "stgSettlement.UTRNo, stgSettlement.NetPayable, stgSettlement.Transactiondate, settlement_mails.attach_path" \
+            "  FROM stgSettlement  INNER JOIN settlement_mails  ON stgSettlement.sett_table_sno = settlement_mails.sno" \
+            "  where InsurerID = '' or ALNO = '' or ClaimNo = '' or UTRNo = '' or NetPayable = '' or Transactiondate = '' " \
+            "and settlement_mails.hospital=%s;"
+        params = [data['hospital']]
 
     if 'parametername' in data:
         q = "SELECT stgSettlement.srno, stgSettlement.InsurerID, stgSettlement.ALNO, stgSettlement.ClaimNo, " \
@@ -140,6 +141,13 @@ def get_stg_settlement_mails():
             "  FROM stgSettlement  INNER JOIN settlement_mails  ON stgSettlement.sett_table_sno = settlement_mails.sno" \
             f"  where {data['parametername']}='' and settlement_mails.hospital=%s;"
         params = [data['hospital']]
+
+    if 'TPAID' in data:
+        q = "SELECT stgSettlement.srno, stgSettlement.InsurerID, stgSettlement.ALNO, stgSettlement.ClaimNo, " \
+            "stgSettlement.UTRNo, stgSettlement.NetPayable, stgSettlement.Transactiondate, settlement_mails.attach_path" \
+            "  FROM stgSettlement  INNER JOIN settlement_mails  ON stgSettlement.sett_table_sno = settlement_mails.sno" \
+            f"  where TPAID=%s;"
+        params = [data['TPAID']]
 
     with mysql.connector.connect(**p_conn_data) as con:
         cur = con.cursor()
