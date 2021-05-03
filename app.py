@@ -139,15 +139,18 @@ def get_stg_settlement_mails():
         q = "SELECT stgSettlement.srno, stgSettlement.InsurerID, stgSettlement.ALNO, stgSettlement.ClaimNo, " \
             "stgSettlement.UTRNo, stgSettlement.NetPayable, stgSettlement.Transactiondate, settlement_mails.attach_path" \
             "  FROM stgSettlement  INNER JOIN settlement_mails  ON stgSettlement.sett_table_sno = settlement_mails.sno" \
-            f"  where {data['parametername']}='' and settlement_mails.hospital=%s;"
+            f"  where {data['parametername']}='';"
         params = [data['hospital']]
 
     if 'TPAID' in data:
         q = "SELECT stgSettlement.srno, stgSettlement.InsurerID, stgSettlement.ALNO, stgSettlement.ClaimNo, " \
             "stgSettlement.UTRNo, stgSettlement.NetPayable, stgSettlement.Transactiondate, settlement_mails.attach_path" \
             "  FROM stgSettlement  INNER JOIN settlement_mails  ON stgSettlement.sett_table_sno = settlement_mails.sno" \
-            f"  where TPAID=%s;"
+            f"  where TPAID=%s "
         params = [data['TPAID']]
+        if 'hospital' in data:
+            q = q + " and settlement_mails.hospital=%s;"
+            params.append(data['hospital'])
 
     with mysql.connector.connect(**p_conn_data) as con:
         cur = con.cursor()
@@ -165,7 +168,6 @@ def get_stg_settlement_mails():
 def set_stg_settlement_mails():
     data = request.form.to_dict()
     fields = ("InsurerID", "ALNO", "ClaimNo", "UTRNo", "NetPayable", "Transactiondate")
-    data_list = []
 
     if 'srno' in data:
         q = "update stgSettlement set "
@@ -180,7 +182,7 @@ def set_stg_settlement_mails():
             cur = con.cursor()
             cur.execute(q, params)
             con.commit()
-        return jsonify(data_list)
+        return jsonify({"msg": "done"})
 
 @app.route("/gethospitalid", methods=["POST"])
 def gethospitalid():
