@@ -143,6 +143,8 @@ def get_stg_settlement_mails():
         params = [data['hospital']]
 
     if 'TPAID' in data:
+        if data['TPAID'] == 'star':
+            data['TPAID'] = 'big'
         q = "SELECT stgSettlement.srno, stgSettlement.InsurerID, stgSettlement.ALNO, stgSettlement.ClaimNo, " \
             "stgSettlement.UTRNo, stgSettlement.NetPayable, stgSettlement.Transactiondate, settlement_mails.attach_path" \
             "  FROM stgSettlement  INNER JOIN settlement_mails  ON stgSettlement.sett_table_sno = settlement_mails.sno" \
