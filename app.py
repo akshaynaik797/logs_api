@@ -381,10 +381,7 @@ def getpatientdetailsbyname():
     if 'p_sname' in data and 'hospitalid' in data:
         url = 'http://3.7.8.68:9982/api/get_from_name1'
         #no_limit = X
-        if 'no_limit' in data:
-            myobj = {'hospital_id': data['hospitalid'], 'name': data['p_sname'], 'no_limit': data['no_limit']}
-        else:
-            myobj = {'hospital_id': data['hospitalid'], 'name': data['p_sname']}
+        myobj = {'hospital_id': data['hospitalid'], 'name': data['p_sname'], 'no_limit': data['no_limit']}
         x = requests.post(url, data=myobj)
         temp = x.json()
         for record in temp:
