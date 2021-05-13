@@ -127,33 +127,43 @@ def get_stg_settlement_mails():
     fields = ("srno", "InsurerID", "ALNO", "ClaimNo", "UTRNo", "NetPayable", "Transactiondate", "attach_path")
     data_list = []
 
-    if 'hospital' in data:
-        q = "SELECT stgSettlement.srno, stgSettlement.InsurerID, stgSettlement.ALNO, stgSettlement.ClaimNo, " \
-            "stgSettlement.UTRNo, stgSettlement.NetPayable, stgSettlement.Transactiondate, settlement_mails.attach_path" \
-            "  FROM stgSettlement  INNER JOIN settlement_mails  ON stgSettlement.sett_table_sno = settlement_mails.sno" \
-            "  where InsurerID = '' or ALNO = '' or ClaimNo = '' or UTRNo = '' or NetPayable = '' or Transactiondate = '' " \
-            "and settlement_mails.hospital=%s;"
-        params = [data['hospital']]
-
-    if 'parametername' in data:
-        q = "SELECT stgSettlement.srno, stgSettlement.InsurerID, stgSettlement.ALNO, stgSettlement.ClaimNo, " \
-            "stgSettlement.UTRNo, stgSettlement.NetPayable, stgSettlement.Transactiondate, settlement_mails.attach_path" \
-            "  FROM stgSettlement  INNER JOIN settlement_mails  ON stgSettlement.sett_table_sno = settlement_mails.sno" \
-            f"  where {data['parametername']}='';"
-        params = [data['hospital']]
+    # if 'hospital' in data:
+    #     q = "SELECT stgSettlement.srno, stgSettlement.InsurerID, stgSettlement.ALNO, stgSettlement.ClaimNo, " \
+    #         "stgSettlement.UTRNo, stgSettlement.NetPayable, stgSettlement.Transactiondate, settlement_mails.attach_path" \
+    #         "  FROM stgSettlement  INNER JOIN settlement_mails  ON stgSettlement.sett_table_sno = settlement_mails.sno" \
+    #         "  where InsurerID = '' or ALNO = '' or ClaimNo = '' or UTRNo = '' or NetPayable = '' or Transactiondate = '' " \
+    #         "and settlement_mails.hospital=%s;"
+    #     params = [data['hospital']]
+    #
+    # if 'parametername' in data:
+    #     q = "SELECT stgSettlement.srno, stgSettlement.InsurerID, stgSettlement.ALNO, stgSettlement.ClaimNo, " \
+    #         "stgSettlement.UTRNo, stgSettlement.NetPayable, stgSettlement.Transactiondate, settlement_mails.attach_path" \
+    #         "  FROM stgSettlement  INNER JOIN settlement_mails  ON stgSettlement.sett_table_sno = settlement_mails.sno" \
+    #         f"  where {data['parametername']}='';"
+    #     params = [data['hospital']]
 
     if 'TPAID' in data:
         if data['TPAID'] == 'star':
             data['TPAID'] = 'big'
-        q = "SELECT stgSettlement.srno, stgSettlement.InsurerID, stgSettlement.ALNO, stgSettlement.ClaimNo, " \
-            "stgSettlement.UTRNo, stgSettlement.NetPayable, stgSettlement.Transactiondate, settlement_mails.attach_path" \
-            "  FROM stgSettlement  INNER JOIN settlement_mails  ON stgSettlement.sett_table_sno = settlement_mails.sno" \
-            f"  where TPAID=%s "
-        params = [data['TPAID']]
+        if data['TPAID'] == 'newindia':
+            q = "SELECT stgSettlement.srno, stgSettlement.InsurerID, stgSettlement.ALNO, stgSettlement.ClaimNo, " \
+                "stgSettlement.UTRNo, stgSettlement.NetPayable, stgSettlement.Transactiondate, settlement_mails.attach_path" \
+                " FROM stgSettlement  INNER JOIN settlement_mails  ON stgSettlement.sett_table_sno = settlement_mails.sno" \
+                f" where InsurerID=%s "
+            params = [data['TPAID']]
+        else:
+            q = "SELECT stgSettlement.srno, stgSettlement.InsurerID, stgSettlement.ALNO, stgSettlement.ClaimNo, " \
+                "stgSettlement.UTRNo, stgSettlement.NetPayable, stgSettlement.Transactiondate, settlement_mails.attach_path" \
+                " FROM stgSettlement  INNER JOIN settlement_mails  ON stgSettlement.sett_table_sno = settlement_mails.sno" \
+                f" where TPAID=%s "
+            params = [data['TPAID']]
         if 'hospital' in data:
-            q = q + " and settlement_mails.hospital=%s;"
+            q = q + " and settlement_mails.hospital=%s "
             params.append(data['hospital'])
-
+        if 'from' in data and 'to' in data:
+            date_format = '%d/%m/%Y %H:%i:%s'
+            q = q + " and STR_TO_DATE(stgSettlement.Transactiondate, %s) between STR_TO_DATE(%s, %s) and STR_TO_DATE(%s, %s)"
+            params.extend([date_format, data['from'], date_format, data['to'], date_format])
     with mysql.connector.connect(**p_conn_data) as con:
         cur = con.cursor()
         cur.execute(q, params)
