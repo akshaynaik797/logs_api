@@ -5,6 +5,7 @@ import xlrd
 import mysql.connector
 
 from common import p_conn_data
+from make_log import log_exceptions
 
 stg_sett_fields = (
     "srno", "InsurerID", "TPAID", "ALNO", "ClaimNo", "PatientName", "AccountNo", "BeneficiaryBank_Name", "UTRNo",
@@ -69,6 +70,11 @@ col_mapping = {
              ['SettlementDate', ['Transactiondate']], ['ClaimChequeNumber', ['UTRNo']],
              ['InsurerClaimNo', ["ALNO", "ClaimNo"]], ['Tds', ['TDS']], ["star", "TPAID"]]
 }
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ['xls', 'xlsx']
 
 def get_data_dict(col_mapping, row, tpa_id):
     mapping = col_mapping[tpa_id]
@@ -205,6 +211,17 @@ def ins_upd_data(datadict):
         con.commit()
     return True
 
+def main(path, tpa_id):
+    data = get_data(path, tpa_id=tpa_id)
+    total, success_cnt = len(data), 0
+    for record in data:
+        try:
+            data_dict = get_data_dict(col_mapping, record, tpa_id)
+            if ins_upd_data(data_dict):
+                success_cnt = success_cnt + 1
+        except:
+            log_exceptions(record=record, path=path, tpa_id=tpa_id)
+    return f"total {total}, processed {success_cnt}"
 
 if __name__ == '__main__':
     path = "/home/akshay/Downloads/Excel/star_settlementReport_14052021_010632.xlsx"

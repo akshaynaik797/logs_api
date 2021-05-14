@@ -3,8 +3,13 @@ from flask import Flask, request, jsonify, url_for, send_from_directory
 from flask_cors import CORS
 import mysql.connector
 import os
+
+from werkzeug.utils import secure_filename
+
 from common import conf_conn_data, logs_conn_data, run_sms_scheduler, p_conn_data
 from alerts_ import get_db_conf
+from excel_api import allowed_file, main
+
 app = Flask(__name__)
 
 cors = CORS(app)
@@ -12,6 +17,10 @@ cors = CORS(app)
 ####for test purpose
 # run_sms_scheduler()
 ####
+
+dir_name = 'excel_files'
+if not os.path.exists(dir_name):
+    os.mkdir(dir_name)
 
 app.config['CORS_HEADERS'] = 'Content-Type'
 app.config['referrer_url'] = None
@@ -176,6 +185,19 @@ def get_stg_settlement_mails():
             data_list.append(temp)
     return jsonify(data_list)
 
+@app.route("/loadexcel", methods=["POST"])
+def load_excel():
+    data = request.form.to_dict()
+    if 'file' not in request.files:
+        return jsonify("upload file")
+    file = request.files['file']
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        dst = os.path.join(dir_name, filename)
+        file.save(dst)
+        return jsonify(main(dst, data['TPAID']))
+    return jsonify("upload excel file")
+
 @app.route("/setstgsettlementmails", methods=["POST"])
 def set_stg_settlement_mails():
     data = request.form.to_dict()
@@ -270,7 +292,6 @@ def set_sentmaillogs():
         cur.execute(q, params)
         con.commit()
     return {"msg": "done"}
-
 
 @app.route("/get_api_link", methods=["POST"])
 def get_api_link():
