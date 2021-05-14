@@ -47,7 +47,27 @@ col_mapping = {
                   ['NAME', ['PatientName']], ['HOSPITAL_BILL_AMT', ['BilledAmount']], ['DISC_AMT', ['Discount']],
                   ['TDS_AMT', ['TDS']], ['AMOUNT_PAID', ['NetPayable']], ['DT_OF_PAYMENT', ['Transactiondate']],
                   ['DT_OF_ADMISSION', ['DateofAdmission']], ['DT_OF_DISCHARGE', ['DateofDischarge']],
-                  ['UTR_NO', ['UTRNo']], ["paramount", "TPAID"]]
+                  ['UTR_NO', ['UTRNo']], ["paramount", "TPAID"]],
+
+    "reliance": [['PolicyNo', ['POLICYNO']], ['ClaimantName', ['PatientName']],
+                 ['AL/ Cashless Authorisation No', ['ALNO']], ['ClaimNo', ['ClaimNo']],
+                 ['Date Of Admission', ['DateofAdmission']], ['Date Of Discharge', ['DateofDischarge']],
+                 ['Ailment', ['Diagnosis']], ['Claimed amount (A)', ['BilledAmount']], ['Discount', ['Discount']],
+                 ['co pay', ['Copay']], ['TDS_Amount (I) = (G*H)', ['TDS']],
+                 ['NetPaybleAmount (J)=(G-I)', ['NetPayable']], ['E-Transaction No./ChequeNo', ['UTRNo']],
+                 ['E- Transaction Date/Cheque Date', ['Transactiondate']], ["reliance", "TPAID"]],
+
+    "vidal": [['INS Comp Name', ['InsurerID']], ['Vidal ID', ['MemberID']], ['Claimant Name', ['PatientName']],
+              ['PreAuth Number', ['ALNO']], ['Claim Number', ['ClaimNo']], ['DOA', ['DateofAdmission']],
+              ['DOD', ['DateofDischarge']], ['Claim Amt', ['BilledAmount']], ['Co-Pay Amount', ['Copay']],
+              ['Settled Amount', ['SettledAmount ']], ['Cheque Amount', ['NetPayable']], ['TDS Amount', ['TDS']],
+              ['Cheque Date', ['Transactiondate']], ['Cheque Number', ['UTRNo']], ["vidal", "TPAID"],
+              ["Deductable Amount", ["Discount"]]],
+
+    "star": [['DOA', ['DateofAdmission']], ['DOD', ['DateofDischarge']], ['ClaimAmount', ['BilledAmount']],
+             ['ClaimApprovedAmt', ['SettledAmount']], ['ClaimNetPayAmount', ['NetPayable']],
+             ['SettlementDate', ['Transactiondate']], ['ClaimChequeNumber', ['UTRNo']],
+             ['InsurerClaimNo', ["ALNO", "ClaimNo"]], ['Tds', ['TDS']], ["star", "TPAID"]]
 }
 
 def get_data_dict(col_mapping, row, tpa_id):
@@ -61,10 +81,32 @@ def get_data_dict(col_mapping, row, tpa_id):
             data_dict[j] = i.strip()
     if tpa_id == 'fhpl':
         data_dict['ClaimNo'] = data_dict['ClaimNo'].split('/')[0]
+
+    if tpa_id == "reliance":
+        tmp = data_dict['Transactiondate'].replace("00:00:00", "").strip().split('/')
+        data_dict['Transactiondate'] = '/'.join([tmp[1], tmp[0], tmp[2]])
+
+        tmp = data_dict['DateofAdmission'].replace("00:00:00", "").strip().split('/')
+        data_dict['DateofAdmission'] = '/'.join([tmp[1], tmp[0], tmp[2]])
+
+        tmp = data_dict['DateofDischarge'].replace("00:00:00", "").strip().split('/')
+        data_dict['DateofDischarge'] = '/'.join([tmp[1], tmp[0], tmp[2]])
+
+    if tpa_id == "star":
+        tmp = data_dict['Transactiondate'].split('-')[::-1]
+        data_dict['Transactiondate'] = '/'.join(tmp)
+
+        tmp = data_dict['DateofAdmission'].split('-')[::-1]
+        data_dict['DateofAdmission'] = '/'.join(tmp)
+
+        tmp = data_dict['DateofDischarge'].split('-')[::-1]
+        data_dict['DateofDischarge'] = '/'.join(tmp)
+
+
     return data_dict
 
 
-def get_data(excel_file):
+def get_data(excel_file, **kwargs):
     _, ext = os.path.splitext(excel_file)
     data = []
     if ext == '.xlsx':
@@ -92,8 +134,12 @@ def get_data(excel_file):
             for cell in sheet_obj.row(row):
                 tmp.append(str(cell.value))
             table.append(tmp)
-        fields = table[0]
-        for row in table[1:]:
+        start = 1
+        if 'tpa_id' in kwargs:
+            if kwargs['tpa_id'] == "vidal":
+                start = 2
+        fields = table[start-1]
+        for row in table[start:]:
             tmp = {}
             for k, v in zip(fields, row):
                 tmp[k] = v
@@ -161,8 +207,8 @@ def ins_upd_data(datadict):
 
 
 if __name__ == '__main__':
-    path = "/home/akshay/Downloads/Excel/Paramount_01April2020-30April2021PaidClaims.xlsx"
-    data = get_data(path)
-    data_dict = get_data_dict(col_mapping, data[0], "paramount")
+    path = "/home/akshay/Downloads/Excel/star_settlementReport_14052021_010632.xlsx"
+    tpa_id = "star"
+    data = get_data(path, tpa_id=tpa_id)
+    data_dict = get_data_dict(col_mapping, data[0], tpa_id)
     a = ins_upd_data(data_dict)
-pass
