@@ -1,5 +1,7 @@
 import datetime
 import os
+import sys
+
 import openpyxl
 import xlrd
 import mysql.connector
@@ -85,6 +87,7 @@ def get_data_dict(col_mapping, row, tpa_id):
                 data_dict[k] = row[i].strip()
         if isinstance(j, str):
             data_dict[j] = i.strip()
+    data_dict['file_name'] = os.path.split(sys.argv[0])[-1]
     if tpa_id == 'fhpl':
         data_dict['ClaimNo'] = data_dict['ClaimNo'].split('/')[0]
 
@@ -173,7 +176,7 @@ def date_formatting(date):
     return date
 
 
-def ins_upd_data(datadict):
+def ins_upd_data_excel(datadict):
     for i in stg_sett_fields:
         if i not in datadict:
             datadict[i] = ""
@@ -182,34 +185,33 @@ def ins_upd_data(datadict):
     datadict['DateofAdmission'] = date_formatting(datadict['DateofAdmission'])
     datadict['DateofDischarge'] = date_formatting(datadict['DateofDischarge'])
 
-    q = "insert into stgSettlement_copy (`unique_key`, `InsurerID`, `TPAID`, `ALNO`, `ClaimNo`, `PatientName`, " \
+    q = "insert into stgSettlementExcel (`sett_table_sno`, `InsurerID`, `TPAID`, `ALNO`, `ClaimNo`, `PatientName`, " \
         "`AccountNo`, `BeneficiaryBank_Name`, `UTRNo`, `BilledAmount`, `SettledAmount`, `TDS`, `NetPayable`, " \
         "`Transactiondate`, `DateofAdmission`, `DateofDischarge`, `mail_id`, `hospital`, `POLICYNO`, " \
-        "`CorporateName`, `MemberID`, `Diagnosis`, `Discount`, `Copay`, `sett_table_sno`)"
+        "`CorporateName`, `MemberID`, `Diagnosis`, `Discount`, `Copay`, `unique_key`, `file_name`)"
     q = q + ' values (' + ('%s, ' * q.count(',')) + '%s) '
 
-    params = [datadict['unique_key'], datadict['InsurerID'], datadict['TPAID'], datadict['ALNO'], datadict['ClaimNo'],
+    params = [datadict['sett_table_sno'], datadict['InsurerID'], datadict['TPAID'], datadict['ALNO'], datadict['ClaimNo'],
               datadict['PatientName'], datadict['AccountNo'], datadict['BeneficiaryBank_Name'], datadict['UTRNo'],
               datadict['BilledAmount'], datadict['SettledAmount'], datadict['TDS'], datadict['NetPayable'],
               datadict['Transactiondate'], datadict['DateofAdmission'], datadict['DateofDischarge'],
               datadict['mail_id'], datadict['hospital'], datadict['POLICYNO'], datadict['CorporateName'],
               datadict['MemberID'], datadict['Diagnosis'], datadict['Discount'], datadict['Copay'],
-              datadict['sett_table_sno']]
+              datadict['unique_key'], datadict['file_name']]
 
     q1 = "ON DUPLICATE KEY UPDATE `InsurerID`=%s, `TPAID`=%s, `ALNO`=%s, `ClaimNo`=%s, `PatientName`=%s, " \
          "`AccountNo`=%s, `BeneficiaryBank_Name`=%s, `UTRNo`=%s, `BilledAmount`=%s, `SettledAmount`=%s, " \
          "`TDS`=%s, `NetPayable`=%s, `Transactiondate`=%s, `DateofAdmission`=%s, `DateofDischarge`=%s, " \
          "`mail_id`=%s, `hospital`=%s, `POLICYNO`=%s, `CorporateName`=%s, `MemberID`=%s, `Diagnosis`=%s, " \
-         "`Discount`=%s, `Copay`=%s, `sett_table_sno`=%s"
+         "`Discount`=%s, `Copay`=%s, `unique_key`=%s, `file_name`=%s"
     q = q + q1
-
     params = params + params[1:]
-
     with mysql.connector.connect(**p_conn_data) as con:
         cur = con.cursor()
         cur.execute(q, params)
         con.commit()
     return True
+
 
 def main(path, tpa_id):
     data = get_data(path, tpa_id=tpa_id)
@@ -217,7 +219,7 @@ def main(path, tpa_id):
     for record in data:
         try:
             data_dict = get_data_dict(col_mapping, record, tpa_id)
-            if ins_upd_data(data_dict):
+            if ins_upd_data_excel(data_dict):
                 success_cnt = success_cnt + 1
         except:
             log_exceptions(record=record, path=path, tpa_id=tpa_id)
@@ -228,4 +230,4 @@ if __name__ == '__main__':
     tpa_id = "star"
     data = get_data(path, tpa_id=tpa_id)
     data_dict = get_data_dict(col_mapping, data[0], tpa_id)
-    a = ins_upd_data(data_dict)
+    a = ins_upd_data_excel(data_dict)
