@@ -7,17 +7,17 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from alerts_ import trigger
 
-conf_conn_data = {'host': "iclaimdev.caq5osti8c47.ap-south-1.rds.amazonaws.com",
+conf_conn_data = {'host': "database-iclaim.caq5osti8c47.ap-south-1.rds.amazonaws.com",
                   'user': "admin",
                   'password': "Welcome1!",
                   'database': 'configuration'}
 
-logs_conn_data = {'host': "iclaimdev.caq5osti8c47.ap-south-1.rds.amazonaws.com",
+logs_conn_data = {'host': "database-iclaim.caq5osti8c47.ap-south-1.rds.amazonaws.com",
                   'user': "admin",
                   'password': "Welcome1!",
                   'database': 'portals'}
 
-p_conn_data = {'host': "iclaimdev.caq5osti8c47.ap-south-1.rds.amazonaws.com",
+p_conn_data = {'host': "database-iclaim.caq5osti8c47.ap-south-1.rds.amazonaws.com",
                   'user': "admin",
                   'password': "Welcome1!",
                   'database': 'python'}
