@@ -450,7 +450,7 @@ def get_hospitaltlog():
                                      'lock', 'error', 'errorDescription'), dict(), []
     preauth_field_list = ("preauthNo", "MemberId", "p_sname", "admission_date", "dischargedate", "flag","CurrentStatus", "cdate", "up_date", "hospital_name", "p_policy")
 
-    q = "select `srno`, `transactionID`,`PatientID_TreatmentID`,`Type_Ref`,`Type`,`status`,`HospitalID`,`cdate`,`person_name`,`smsTrigger`,`pushTrigger`,`insurerID`,`fStatus`,`fLock`,`lock`,`error`,`errorDescription` from hospitalTLog where transactionID is not null and transactionID != '' and str_to_date(cdate,'%d/%m/%Y')>=str_to_date('12/02/2021','%d/%m/%Y') and srno is not null "
+    q = "select `srno`, `transactionID`,`PatientID_TreatmentID`,`Type_Ref`,`Type`,`status`,`HospitalID`,`cdate`,`person_name`,`smsTrigger`,`pushTrigger`,`insurerID`,`fStatus`,`fLock`,`lock`,`error`,`errorDescription` from hospitalTLog where transactionID is not null and transactionID != '' and srno is not null "
     params = []
     #add preauth params p_sname CurrentStatus
     if 'fromdate' in data and 'todate' in data:
@@ -469,7 +469,7 @@ def get_hospitaltlog():
     if 'insurerID' in data:
         q = q + ' and insurerID=%s'
         params = params + [data['insurerID']]
-    q = q + ' order by cdate desc'
+    q = q + ' order by cdate desc limit 100'
     params = tuple(params)
     with mysql.connector.connect(**logs_conn_data) as con:
         cur = con.cursor()
