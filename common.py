@@ -231,7 +231,7 @@ def comparebybank_lib(hospital_id):
             if r2:
                 insert_in_table(tmp, "settlementByBank")
         except:
-            make_log.log_exceptions(row=row)
+            log_exceptions(row=row)
     return "test"
 
 def insert_in_table(tmp_dict, table):
