@@ -64,19 +64,83 @@ def uploadduelist():
             return jsonify("file uploaded")
     return jsonify("upload excel file")
 
-
 @app.route("/comparesettlementdata", methods=["POST"])
 def comparesettlementdata():
     data = request.form.to_dict()
     hospital_id = data['HospitalID']
     comparesettlementdata_lib(hospital_id)
 
-
 @app.route("/comparebybank", methods=["POST"])
 def comparebybank():
     data = request.form.to_dict()
     hospital_id = data['HospitalID']
     comparesettlementdata_lib(hospital_id)
+
+@app.route("/getduelist", methods=["POST"])
+def getduelist():
+    data = request.form.to_dict()
+    table, date_format, data_list = "settlementDuesList", '%d/%m/%Y %H:%i:%s', []
+    fields = ["srNo", "HospitalID", "BillNo", "BillDate", "CompanyType", "CompanyName", "PatientName", "MemberID", "claimID", "BalanceAmt", "Flag"]
+    q = f"select * from {table} where "
+    q += ' and '.join([i + "=%s" for i in data.keys() if i not in ['Fromdate', 'Todate']])
+    params = [data[i] for i in data.keys() if i not in ['Fromdate', 'Todate']]
+    # if 'Fromdate' in data and 'Todate' in data:
+    #     q += " and STR_TO_DATE(transferDate, %s) between STR_TO_DATE(%s, %s) and STR_TO_DATE(%s, %s)"
+    #     params += [date_format, data['Fromdate'], date_format, data['Todate'], date_format]
+    with mysql.connector.connect(**p_conn_data) as con:
+        cur = con.cursor()
+        cur.execute(q, params)
+        r = cur.fetchall()
+        for row in r:
+            temp = {}
+            for k, v in zip(fields, row):
+                temp[k] = v
+            data_list.append(temp)
+    return jsonify(data_list)
+
+@app.route("/getsettlement", methods=["POST"])
+def getsettlement():
+    data = request.form.to_dict()
+    table, date_format, data_list = "settlementCommon", '%d/%m/%Y %H:%i:%s', []
+    fields = ["SrNo", "HospitalID", "BillNo", "BillDate", "CompanyType", "CompanyName", "PatientName", "MemberID", "ClaimID", "BalanceAmt", "NetPayable", "SettledAmount", "tDS", "UTRNo", "transferDate", "Difference", "statDesc", "BankAMount", "Bank", "cdate", "BankDate"]
+    q = f"select * from {table} where "
+    q += ' and '.join([i + "=%s" for i in data.keys() if i not in ['Fromdate', 'Todate']])
+    params = [data[i] for i in data.keys() if i not in ['Fromdate', 'Todate']]
+    if 'Fromdate' in data and 'Todate' in data:
+        q += " and STR_TO_DATE(transferDate, %s) between STR_TO_DATE(%s, %s) and STR_TO_DATE(%s, %s)"
+        params += [date_format, data['Fromdate'], date_format, data['Todate'], date_format]
+    with mysql.connector.connect(**p_conn_data) as con:
+        cur = con.cursor()
+        cur.execute(q, params)
+        r = cur.fetchall()
+        for row in r:
+            temp = {}
+            for k, v in zip(fields, row):
+                temp[k] = v
+            data_list.append(temp)
+    return jsonify(data_list)
+
+@app.route("/getsettlementbybank", methods=["POST"])
+def getsettlementbybank():
+    data = request.form.to_dict()
+    table, date_format, data_list = "settlementByBank", '%d/%m/%Y %H:%i:%s', []
+    fields = ["SrNo", "HospitalID", "BillNo", "BillDate", "CompanyType", "CompanyName", "PatientName", "MemberID", "ClaimID", "BalanceAmt", "NetPayable", "SettledAmount", "tDS", "UTRNo", "transferDate", "Difference", "statDesc", "BankAMount", "Bank", "cdate", "BankDate"]
+    q = f"select * from {table} where "
+    q += ' and '.join([i + "=%s" for i in data.keys() if i not in ['Fromdate', 'Todate']])
+    params = [data[i] for i in data.keys() if i not in ['Fromdate', 'Todate']]
+    if 'Fromdate' in data and 'Todate' in data:
+        q += " and STR_TO_DATE(transferDate, %s) between STR_TO_DATE(%s, %s) and STR_TO_DATE(%s, %s)"
+        params += [date_format, data['Fromdate'], date_format, data['Todate'], date_format]
+    with mysql.connector.connect(**p_conn_data) as con:
+        cur = con.cursor()
+        cur.execute(q, params)
+        r = cur.fetchall()
+        for row in r:
+            temp = {}
+            for k, v in zip(fields, row):
+                temp[k] = v
+            data_list.append(temp)
+    return jsonify(data_list)
 
 
 @app.route("/getupdationdetaillogcopy", methods=["POST"])
