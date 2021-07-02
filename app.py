@@ -76,6 +76,29 @@ def comparebybank():
     hospital_id = data['HospitalID']
     comparebybank_lib(hospital_id)
 
+@app.route("/getsettlementdeduction", methods=["POST"])
+def getsettlementdeduction():
+    data = request.form.to_dict()
+    table, date_format, data_dict = "stgSettlementDeduction", '%d/%m/%Y %H:%i:%s', {}
+    fields = ["sno", "TPAID", "ClaimID", "Details", "BillAmount", "PayableAmount", "DeductedAmt", "DeductionReason", "Discount", "DeductionCategory", "MailID", "HospitalID", "settlement_sno", "processing_time", "file_name"]
+    q = f"select * from {table} where ClaimID=%s"
+    params = [data['ClaimID']]
+    with mysql.connector.connect(**p_conn_data) as con:
+        cur = con.cursor()
+        cur.execute(q, params)
+        r = cur.fetchall()
+        for row in r:
+            temp = {}
+            for k, v in zip(fields, row):
+                temp[k] = v
+            if temp['settlement_sno'] not in data_dict:
+                data_dict[temp['settlement_sno']] = []
+                data_dict[temp['settlement_sno']].append(temp)
+            else:
+                data_dict[temp['settlement_sno']].append(temp)
+    return jsonify(data_dict)
+
+
 @app.route("/getduelist", methods=["POST"])
 def getduelist():
     data = request.form.to_dict()
