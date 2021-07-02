@@ -202,6 +202,38 @@ def comparesettlementdata_lib(hospital_id):
             log_exceptions(row=row)
     return "test"
 
+def comparebybank_lib(hospital_id):
+    r1 = []
+    a = ["SrNo", "UTRNo", "statDesc", "BankAMount", "Bank", "BankDate"]
+    b = ["ClaimID", "PatientName", "MemberID", "NetPayable", "SettledAmount", "tDS", "transferDate"]
+    q = "select srno, UTR_No, Name_ECS_No, amount, banknm, date from settlementutrupdate"
+    q2 = "SELECT ClaimNo, PatientName, MemberID, NetPayable, SettledAmount, TDS, Transactiondate from stgSettlement " \
+         "where UTRNo=%s or UTRNo=%s or UTRNo=%s limit 1"
+    with mysql.connector.connect(**get_db_conf(hosp=hospital_id)) as con:
+        cur = con.cursor()
+        cur.execute(q)
+        r1 = cur.fetchall()
+    for row in r1:
+        try:
+            tmp = {}
+            for k, v in zip(a, row):
+                tmp[k] = v
+            tmp['HospitalID'] = hospital_id
+            utrno = tmp['UTRNo']
+            # strings1 = utrno, re.sub(r"^[^0-9]+", '', utrno), re.sub(r"^0+", '', utrno)
+            with mysql.connector.connect(**p_conn_data) as con:
+                cur1 = con.cursor()
+                cur1.execute(q2, [utrno, re.sub(r"^[^0-9]+", '', utrno), re.sub(r"^0+", '', utrno)])
+                if r2 := cur1.fetchone():
+                    for k, v in zip(b, r2):
+                        tmp[k] = v
+            # function to insert record in settlementByBank
+            if r2:
+                insert_in_table(tmp, "settlementByBank")
+        except:
+            make_log.log_exceptions(row=row)
+    return "test"
+
 def insert_in_table(tmp_dict, table):
     # a = {'col1': 'val1', 'col2': 'val2'}
     # tmp = [i for i in a.keys()]

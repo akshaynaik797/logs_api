@@ -7,7 +7,7 @@ import os
 from werkzeug.utils import secure_filename
 
 from common import conf_conn_data, logs_conn_data, run_sms_scheduler, p_conn_data, insert_in_settlementdueslist, \
-    comparesettlementdata_lib
+    comparesettlementdata_lib, comparebybank_lib
 from alerts_ import get_db_conf
 from excel_api import allowed_file, main
 
@@ -74,7 +74,7 @@ def comparesettlementdata():
 def comparebybank():
     data = request.form.to_dict()
     hospital_id = data['HospitalID']
-    comparesettlementdata_lib(hospital_id)
+    comparebybank_lib(hospital_id)
 
 @app.route("/getduelist", methods=["POST"])
 def getduelist():
