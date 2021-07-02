@@ -6,7 +6,8 @@ import os
 
 from werkzeug.utils import secure_filename
 
-from common import conf_conn_data, logs_conn_data, run_sms_scheduler, p_conn_data
+from common import conf_conn_data, logs_conn_data, run_sms_scheduler, p_conn_data, insert_in_settlementdueslist, \
+    comparesettlementdata_lib
 from alerts_ import get_db_conf
 from excel_api import allowed_file, main
 
@@ -25,16 +26,9 @@ if not os.path.exists(dir_name):
 app.config['CORS_HEADERS'] = 'Content-Type'
 app.config['referrer_url'] = None
 
-
 @app.route("/", methods=["POST", "GET"])
 def index():
     return "this is logs api"
-
-# @app.route('/attachments/<filename>')
-# def attachments(filename):
-#     fol, file = os.path.split(filename)
-#     return send_from_directory(fol, file, mimetype='application/pdf')
-
 
 @app.route("/api/downloadfile")
 def get_file():
@@ -55,6 +49,34 @@ def get_file():
                 dirname = dirname + x + '/'
         # return send_from_directory(r"C:\Users\91798\Desktop\download\templates", filename='ASHISHKUMAR_IT.pdf', as_attachment=True)
         return send_from_directory(dirname, filename=filename, as_attachment=True, mimetype='application/pdf')
+
+@app.route("/uploadduelist", methods=["POST"])
+def uploadduelist():
+    data = request.form.to_dict()
+    if 'file' not in request.files:
+        return jsonify("upload file")
+    file = request.files['file']
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        dst = os.path.join(dir_name, filename)
+        file.save(dst)
+        if insert_in_settlementdueslist(dst, data['HospitalID']):
+            return jsonify("file uploaded")
+    return jsonify("upload excel file")
+
+
+@app.route("/comparesettlementdata", methods=["POST"])
+def comparesettlementdata():
+    data = request.form.to_dict()
+    hospital_id = data['HospitalID']
+    comparesettlementdata_lib(hospital_id)
+
+
+@app.route("/comparebybank", methods=["POST"])
+def comparebybank():
+    data = request.form.to_dict()
+    hospital_id = data['HospitalID']
+    comparesettlementdata_lib(hospital_id)
 
 
 @app.route("/getupdationdetaillogcopy", methods=["POST"])
@@ -514,8 +536,6 @@ def get_hospitaltlog():
             records.append(datadict)
     return jsonify(records)
 
-
-
 @app.route('/modify_apisLog', methods=["POST"])
 def modify_apisLog():
     field_list, datadict = ('dateTime', 'hospitalID','referenceNo','method','title','purpose','status',
@@ -539,9 +559,6 @@ def modify_apisLog():
             cur.execute(q, record_data)
             con.commit()
     return jsonify('success')
-
-
-
 
 @app.route('/get_apisLog', methods=["POST"])
 def get_apisLog():
