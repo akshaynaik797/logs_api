@@ -240,7 +240,7 @@ def comparebybank_lib(hospital_id, **kwargs):
             # strings1 = utrno, re.sub(r"^[^0-9]+", '', utrno), re.sub(r"^0+", '', utrno)
             with mysql.connector.connect(**p_conn_data) as con:
                 cur1 = con.cursor()
-                cur1.execute(q2, [utrno, re.sub(r"^[^0-9]+", '', utrno), re.sub(r"^0+", '', utrno)])
+                cur1.execute(q2, [utrno, re.sub(r"^[^0-9]+", '', utrno), re.sub(r"[-/]0$", '', utrno)])
                 if r2 := cur1.fetchone():
                     for k, v in zip(b, r2):
                         tmp[k] = v
