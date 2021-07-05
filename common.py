@@ -128,16 +128,25 @@ def comparesettlementdata_lib(hospital_id, **kwargs):
 
     q1 = "SELECT HospitalID, BillNo,BillDate, CompanyType, CompanyName,PatientName, MemberID, claimID, " \
          "BalanceAmt, Flag from settlementDuesList where HospitalID=%s and Flag='N'"
+    params = [hospital_id]
+
+    # q1 = "SELECT HospitalID, BillNo,BillDate, CompanyType, CompanyName,PatientName, MemberID, claimID, " \
+    #      "BalanceAmt, Flag from settlementDuesList where claimID='RC-HS21-12373571'"
+    # params = []
 
     q2 = "SELECT NetPayable, SettledAmount, TDS, UTRNo, Transactiondate from stgSettlement " \
-         "where ClaimNo=%s or ClaimNo=%s or ClaimNo=%s or MemberID=%s or MemberID=%s or MemberID=%s limit 1"
+         "where ClaimNo=%s or ClaimNo=%s or ClaimNo=%s limit 1"
+
+    q2_1 = "SELECT NetPayable, SettledAmount, TDS, UTRNo, Transactiondate from stgSettlement " \
+         "where MemberID=%s or MemberID=%s or MemberID=%s limit 1"
+
 
 
     q4 = "SELECT Name_ECS_No, amount, banknm, date from settlementutrupdate where UTR_No=%s limit 1"
 
     with mysql.connector.connect(**p_conn_data) as con:
         cur = con.cursor()
-        cur.execute(q1, [hospital_id])
+        cur.execute(q1, params)
         r1 = cur.fetchall()
     for row in r1:
         try:
@@ -150,9 +159,12 @@ def comparesettlementdata_lib(hospital_id, **kwargs):
             # strings1 = memberid, re.sub(r"^[^0-9]+", '', memberid), re.sub(r"^0+", '', memberid)
             with mysql.connector.connect(**p_conn_data) as con:
                 cur = con.cursor()
-                cur.execute(q2, [claimid, re.sub(r"^[^0-9]+", '', claimid), re.sub(r"^0+", '', claimid), memberid,
-                                 re.sub(r"^[^0-9]+", '', memberid), re.sub(r"^0+", '', memberid)])
-                if r2 := cur.fetchone():
+                cur.execute(q2, [claimid, re.sub(r"^[^0-9]+", '', claimid), re.sub(r"[-/]0$", '', claimid)])
+                r2 = cur.fetchone()
+                if r2 is None:
+                    cur.execute(q2_1, [memberid, re.sub(r"^[^0-9]+", '', memberid), re.sub(r"[-/]0$", '', memberid)])
+                    r2 = cur.fetchone()
+                if r2:
                     for k, v in zip(b, r2):
                         tmp1[k] = v
                     tmp1["Flag"] = 'P'
