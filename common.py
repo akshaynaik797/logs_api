@@ -117,8 +117,9 @@ def insert_in_settlementdueslist(excel_file, hospital_id):
             log_exceptions(row=row)
     return True
 
-def comparesettlementdata_lib(hospital_id):
+def comparesettlementdata_lib(hospital_id, **kwargs):
     r1 = []
+    total, found = 0, 0
     a = ["HospitalID", "BillNo", "BillDate", "CompanyType", "CompanyName", "PatientName", "MemberID",
               "claimID", "BalanceAmt", "Flag"]
     b = ['NetPayable', 'SettledAmount', 'TDS', 'UTRNo', 'transferDate']
@@ -140,6 +141,7 @@ def comparesettlementdata_lib(hospital_id):
         r1 = cur.fetchall()
     for row in r1:
         try:
+            total += 1
             tmp1 = {}
             for k, v in zip(a, row):
                 tmp1[k] = v
@@ -198,12 +200,14 @@ def comparesettlementdata_lib(hospital_id):
                     cur = con.cursor()
                     cur.execute(q5, [tmp1['Flag'], tmp1['claimID']])
                     con.commit()
+                found += 1
         except:
             log_exceptions(row=row)
-    return "test"
+    print("processed records: ", total, " found: ", found)
 
-def comparebybank_lib(hospital_id):
+def comparebybank_lib(hospital_id, **kwargs):
     r1 = []
+    total, found = 0, 0
     a = ["SrNo", "UTRNo", "statDesc", "BankAMount", "Bank", "BankDate"]
     b = ["ClaimID", "PatientName", "MemberID", "NetPayable", "SettledAmount", "tDS", "transferDate"]
     q = "select srno, UTR_No, Name_ECS_No, amount, banknm, date from settlementutrupdate"
@@ -215,6 +219,7 @@ def comparebybank_lib(hospital_id):
         r1 = cur.fetchall()
     for row in r1:
         try:
+            total += 1
             tmp = {}
             for k, v in zip(a, row):
                 tmp[k] = v
@@ -230,9 +235,10 @@ def comparebybank_lib(hospital_id):
             # function to insert record in settlementByBank
             if r2:
                 insert_in_table(tmp, "settlementByBank")
+                found += 1
         except:
             log_exceptions(row=row)
-    return "test"
+    print("processed records: ", total, " found: ", found)
 
 def insert_in_table(tmp_dict, table):
     # a = {'col1': 'val1', 'col2': 'val2'}
