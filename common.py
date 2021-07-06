@@ -142,7 +142,7 @@ def comparesettlementdata_lib(hospital_id, **kwargs):
 
 
 
-    q4 = "SELECT Name_ECS_No, amount, banknm, date from settlementutrupdate where UTR_No=%s limit 1"
+    q4 = "SELECT Name_ECS_No, amount, banknm, date from settlementutrupdate where UTR_No=%s or UTR_No=%s or UTR_No=%s limit 1"
 
     with mysql.connector.connect(**p_conn_data) as con:
         cur = con.cursor()
@@ -193,15 +193,16 @@ def comparesettlementdata_lib(hospital_id, **kwargs):
                             net_pay = float(tmp['NetPayable'])
                             percent = min(bal_amt, net_pay) / max(net_pay, bal_amt)
                             tmp_dict[percent] = tmp
-                    if len(tmp_dict) > 0 and max(tmp_dict.keys()) > 0.9:
+                    if len(tmp_dict) > 0:
                         for k, v in tmp_dict[max(tmp_dict.keys())].items():
                             tmp1[k] = v
                         tmp1["Flag"] = 'R'
             # Pick orange col data from where stgSettlement--> utrno = settlementutrupdate.utrno
             if 'UTRNo' in tmp1:
+                utrno = tmp1['UTRNo'].strip()
                 with mysql.connector.connect(**get_db_conf(hosp=hospital_id)) as con:
                     cur = con.cursor()
-                    cur.execute(q4, [tmp1['UTRNo']])
+                    cur.execute(q4, [[utrno, re.sub(r"^[^0-9]+", '', utrno), re.sub(r"^0[-/]", '', utrno)]])
                     if r4 := cur.fetchone():
                         for k, v in zip(c, r4):
                             tmp1[k] = v
@@ -241,7 +242,7 @@ def comparebybank_lib(hospital_id, **kwargs):
             # strings1 = utrno, re.sub(r"^[^0-9]+", '', utrno), re.sub(r"^0+", '', utrno)
             with mysql.connector.connect(**p_conn_data) as con:
                 cur1 = con.cursor()
-                cur1.execute(q2, [utrno, re.sub(r"^[^0-9]+", '', utrno), re.sub(r"[-/]0$", '', utrno)])
+                cur1.execute(q2, [utrno, re.sub(r"^[^0-9]+", '', utrno), re.sub(r"^0[-/]", '', utrno)])
                 if r2 := cur1.fetchone():
                     for k, v in zip(b, r2):
                         tmp[k] = v
