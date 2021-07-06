@@ -175,9 +175,9 @@ def comparesettlementdata_lib(hospital_id, **kwargs):
                     # if partial and full match
                     # if  diff between settlementDuesList.balance amt  stgsett.netpayable is 10% pick closest
                     r3 = None
-                    word_list = re.split(r" +", re.sub(r"[^\w ]", "", tmp1['PatientName']).strip())
+                    word_list = ['%'+i+'%' for i in re.split(r" +", re.sub(r"[^\w ]", "", tmp1['PatientName']).strip()) if len(i) > 1]
                     q3 = "SELECT NetPayable, SettledAmount, TDS, UTRNo, Transactiondate from stgSettlement where "
-                    q3 += " PatientName=%s or" * len(word_list)
+                    q3 += " PatientName like %s or" * len(word_list)
                     q3 = q3.strip('or')
                     with mysql.connector.connect(**p_conn_data) as con:
                         cur = con.cursor()
@@ -189,9 +189,10 @@ def comparesettlementdata_lib(hospital_id, **kwargs):
                         tmp = {}
                         for k, v in zip(b, row_):
                             tmp[k] = v
-                        net_pay = float(tmp['NetPayable'])
-                        percent = min(bal_amt, net_pay) / max(net_pay, bal_amt)
-                        tmp_dict[percent] = tmp
+                        if tmp['NetPayable'] != '':
+                            net_pay = float(tmp['NetPayable'])
+                            percent = min(bal_amt, net_pay) / max(net_pay, bal_amt)
+                            tmp_dict[percent] = tmp
                     if len(tmp_dict) > 0 and max(tmp_dict.keys()) > 0.9:
                         for k, v in tmp_dict[max(tmp_dict.keys())].items():
                             tmp1[k] = v
