@@ -1,15 +1,12 @@
-import requests
-from flask import Flask, request, jsonify, url_for, send_from_directory
-from flask_cors import CORS
-import mysql.connector
 import os
 
-from werkzeug.utils import secure_filename
+import mysql.connector
+import requests
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
 
-from common import conf_conn_data, logs_conn_data, run_sms_scheduler, p_conn_data, insert_in_settlementdueslist, \
-    comparesettlementdata_lib, comparebybank_lib
 from alerts_ import get_db_conf
-from excel_api import allowed_file, main
+from common import conf_conn_data, logs_conn_data, p_conn_data
 
 app = Flask(__name__)
 
@@ -49,122 +46,6 @@ def get_file():
                 dirname = dirname + x + '/'
         # return send_from_directory(r"C:\Users\91798\Desktop\download\templates", filename='ASHISHKUMAR_IT.pdf', as_attachment=True)
         return send_from_directory(dirname, filename=filename, as_attachment=True, mimetype='application/pdf')
-
-@app.route("/uploadduelist", methods=["POST"])
-def uploadduelist():
-    data = request.form.to_dict()
-    if 'file' not in request.files:
-        return jsonify("upload file")
-    file = request.files['file']
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        dst = os.path.join(dir_name, filename)
-        file.save(dst)
-        if insert_in_settlementdueslist(dst, data['HospitalID']):
-            return jsonify("file uploaded")
-    return jsonify("upload excel file")
-
-@app.route("/comparesettlementdata", methods=["POST"])
-def comparesettlementdata():
-    data = request.form.to_dict()
-    hospital_id = data['HospitalID']
-    comparesettlementdata_lib(hospital_id)
-
-@app.route("/comparebybank", methods=["POST"])
-def comparebybank():
-    data = request.form.to_dict()
-    hospital_id = data['HospitalID']
-    comparebybank_lib(hospital_id)
-
-@app.route("/getsettlementdeduction", methods=["POST"])
-def getsettlementdeduction():
-    data = request.form.to_dict()
-    table, date_format, data_dict = "stgSettlementDeduction", '%d/%m/%Y %H:%i:%s', {}
-    fields = ["sno", "TPAID", "ClaimID", "Details", "BillAmount", "PayableAmount", "DeductedAmt", "DeductionReason", "Discount", "DeductionCategory", "MailID", "HospitalID", "settlement_sno", "processing_time", "file_name"]
-    q = f"select * from {table} where ClaimID=%s"
-    params = [data['ClaimID']]
-    with mysql.connector.connect(**p_conn_data) as con:
-        cur = con.cursor()
-        cur.execute(q, params)
-        r = cur.fetchall()
-        for row in r:
-            temp = {}
-            for k, v in zip(fields, row):
-                temp[k] = v
-            if temp['settlement_sno'] not in data_dict:
-                data_dict[temp['settlement_sno']] = []
-                data_dict[temp['settlement_sno']].append(temp)
-            else:
-                data_dict[temp['settlement_sno']].append(temp)
-    return jsonify(data_dict)
-
-
-@app.route("/getduelist", methods=["POST"])
-def getduelist():
-    data = request.form.to_dict()
-    table, date_format, data_list = "settlementDuesList", '%d/%m/%Y %H:%i:%s', []
-    fields = ["srNo", "HospitalID", "BillNo", "BillDate", "CompanyType", "CompanyName", "PatientName", "MemberID", "claimID", "BalanceAmt", "Flag"]
-    q = f"select * from {table} where "
-    q += ' and '.join([i + "=%s" for i in data.keys() if i not in ['Fromdate', 'Todate']])
-    params = [data[i] for i in data.keys() if i not in ['Fromdate', 'Todate']]
-    # if 'Fromdate' in data and 'Todate' in data:
-    #     q += " and STR_TO_DATE(transferDate, %s) between STR_TO_DATE(%s, %s) and STR_TO_DATE(%s, %s)"
-    #     params += [date_format, data['Fromdate'], date_format, data['Todate'], date_format]
-    with mysql.connector.connect(**p_conn_data) as con:
-        cur = con.cursor()
-        cur.execute(q, params)
-        r = cur.fetchall()
-        for row in r:
-            temp = {}
-            for k, v in zip(fields, row):
-                temp[k] = v
-            data_list.append(temp)
-    return jsonify(data_list)
-
-@app.route("/getsettlement", methods=["POST"])
-def getsettlement():
-    data = request.form.to_dict()
-    table, date_format, data_list = "settlementCommon", '%d/%m/%Y %H:%i:%s', []
-    fields = ["SrNo", "HospitalID", "BillNo", "BillDate", "CompanyType", "CompanyName", "PatientName", "MemberID", "ClaimID", "BalanceAmt", "NetPayable", "SettledAmount", "tDS", "UTRNo", "transferDate", "Difference", "statDesc", "BankAMount", "Bank", "cdate", "BankDate"]
-    q = f"select * from {table} where "
-    q += ' and '.join([i + "=%s" for i in data.keys() if i not in ['Fromdate', 'Todate']])
-    params = [data[i] for i in data.keys() if i not in ['Fromdate', 'Todate']]
-    if 'Fromdate' in data and 'Todate' in data:
-        q += " and STR_TO_DATE(transferDate, %s) between STR_TO_DATE(%s, %s) and STR_TO_DATE(%s, %s)"
-        params += [date_format, data['Fromdate'], date_format, data['Todate'], date_format]
-    with mysql.connector.connect(**p_conn_data) as con:
-        cur = con.cursor()
-        cur.execute(q, params)
-        r = cur.fetchall()
-        for row in r:
-            temp = {}
-            for k, v in zip(fields, row):
-                temp[k] = v
-            data_list.append(temp)
-    return jsonify(data_list)
-
-@app.route("/getsettlementbybank", methods=["POST"])
-def getsettlementbybank():
-    data = request.form.to_dict()
-    table, date_format, data_list = "settlementByBank", '%d/%m/%Y %H:%i:%s', []
-    fields = ["SrNo", "HospitalID", "BillNo", "BillDate", "CompanyType", "CompanyName", "PatientName", "MemberID", "ClaimID", "BalanceAmt", "NetPayable", "SettledAmount", "tDS", "UTRNo", "transferDate", "Difference", "statDesc", "BankAMount", "Bank", "cdate", "BankDate"]
-    q = f"select * from {table} where "
-    q += ' and '.join([i + "=%s" for i in data.keys() if i not in ['Fromdate', 'Todate']])
-    params = [data[i] for i in data.keys() if i not in ['Fromdate', 'Todate']]
-    if 'Fromdate' in data and 'Todate' in data:
-        q += " and STR_TO_DATE(transferDate, %s) between STR_TO_DATE(%s, %s) and STR_TO_DATE(%s, %s)"
-        params += [date_format, data['Fromdate'], date_format, data['Todate'], date_format]
-    with mysql.connector.connect(**p_conn_data) as con:
-        cur = con.cursor()
-        cur.execute(q, params)
-        r = cur.fetchall()
-        for row in r:
-            temp = {}
-            for k, v in zip(fields, row):
-                temp[k] = v
-            data_list.append(temp)
-    return jsonify(data_list)
-
 
 @app.route("/getupdationdetaillogcopy", methods=["POST"])
 def get_updation_detail_log_copy():
@@ -227,85 +108,6 @@ def get_settlement_mails():
             temp['attach_path'] = link_text + temp['attach_path']
             data_list.append(temp)
     return jsonify(data_list)
-
-@app.route("/setsettlementmails", methods=["POST"])
-def set_settlement_mails():
-    data = request.form.to_dict()
-    with mysql.connector.connect(**p_conn_data) as con:
-        cur = con.cursor()
-        q = "update settlement_mails set completed=%s where sno=%s"
-        cur.execute(q, (data['flag'], data['flag']))
-        con.commit()
-    return jsonify('done')
-
-@app.route("/getstgsettlementmails", methods=["POST"])
-def get_stg_settlement_mails():
-    link_text = request.url_root + 'api/downloadfile?filename='
-    data = request.form.to_dict()
-    fields = ("srno", "InsurerID", "ALNO", "ClaimNo", "UTRNo", "NetPayable", "Transactiondate", "attach_path")
-    data_list = []
-
-    # if 'hospital' in data:
-    #     q = "SELECT stgSettlement.srno, stgSettlement.InsurerID, stgSettlement.ALNO, stgSettlement.ClaimNo, " \
-    #         "stgSettlement.UTRNo, stgSettlement.NetPayable, stgSettlement.Transactiondate, settlement_mails.attach_path" \
-    #         "  FROM stgSettlement  INNER JOIN settlement_mails  ON stgSettlement.sett_table_sno = settlement_mails.sno" \
-    #         "  where InsurerID = '' or ALNO = '' or ClaimNo = '' or UTRNo = '' or NetPayable = '' or Transactiondate = '' " \
-    #         "and settlement_mails.hospital=%s;"
-    #     params = [data['hospital']]
-    #
-    # if 'parametername' in data:
-    #     q = "SELECT stgSettlement.srno, stgSettlement.InsurerID, stgSettlement.ALNO, stgSettlement.ClaimNo, " \
-    #         "stgSettlement.UTRNo, stgSettlement.NetPayable, stgSettlement.Transactiondate, settlement_mails.attach_path" \
-    #         "  FROM stgSettlement  INNER JOIN settlement_mails  ON stgSettlement.sett_table_sno = settlement_mails.sno" \
-    #         f"  where {data['parametername']}='';"
-    #     params = [data['hospital']]
-
-    if 'TPAID' in data:
-        if data['TPAID'] == 'star':
-            data['TPAID'] = 'big'
-        if data['TPAID'] == 'newindia':
-            q = "SELECT stgSettlement.srno, stgSettlement.InsurerID, stgSettlement.ALNO, stgSettlement.ClaimNo, " \
-                "stgSettlement.UTRNo, stgSettlement.NetPayable, stgSettlement.Transactiondate, settlement_mails.attach_path" \
-                " FROM stgSettlement  INNER JOIN settlement_mails  ON stgSettlement.sett_table_sno = settlement_mails.sno" \
-                f" where InsurerID=%s "
-            params = [data['TPAID']]
-        else:
-            q = "SELECT stgSettlement.srno, stgSettlement.InsurerID, stgSettlement.ALNO, stgSettlement.ClaimNo, " \
-                "stgSettlement.UTRNo, stgSettlement.NetPayable, stgSettlement.Transactiondate, settlement_mails.attach_path" \
-                " FROM stgSettlement  INNER JOIN settlement_mails  ON stgSettlement.sett_table_sno = settlement_mails.sno" \
-                f" where TPAID=%s "
-            params = [data['TPAID']]
-        if 'hospital' in data:
-            q = q + " and settlement_mails.hospital=%s "
-            params.append(data['hospital'])
-        if 'from' in data and 'to' in data:
-            date_format = '%d/%m/%Y %H:%i:%s'
-            q = q + " and STR_TO_DATE(stgSettlement.Transactiondate, %s) between STR_TO_DATE(%s, %s) and STR_TO_DATE(%s, %s)"
-            params.extend([date_format, data['from'], date_format, data['to'], date_format])
-    with mysql.connector.connect(**p_conn_data) as con:
-        cur = con.cursor()
-        cur.execute(q, params)
-        r = cur.fetchall()
-        for row in r:
-            temp = {}
-            for k, v in zip(fields, row):
-                temp[k] = v
-            temp['attach_path'] = link_text + temp['attach_path']
-            data_list.append(temp)
-    return jsonify(data_list)
-
-@app.route("/loadexcel", methods=["POST"])
-def load_excel():
-    data = request.form.to_dict()
-    if 'file' not in request.files:
-        return jsonify("upload file")
-    file = request.files['file']
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        dst = os.path.join(dir_name, filename)
-        file.save(dst)
-        return jsonify(main(dst, data['TPAID']))
-    return jsonify("upload excel file")
 
 @app.route("/setstgsettlementmails", methods=["POST"])
 def set_stg_settlement_mails():
