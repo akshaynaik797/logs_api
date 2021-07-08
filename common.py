@@ -40,6 +40,23 @@ def get_db_info(hospital_id):
             datadict[key] = value
         records[datadict['hospitalID']] = datadict
 
+def insert_in_table(tmp_dict, table):
+    # a = {'col1': 'val1', 'col2': 'val2'}
+    # tmp = [i for i in a.keys()]
+    # q = "insert into table (" + ', '.join(tmp) + ") values (" + ('%s, ' * (len(tmp) - 1)) + "%s)"
+    # params = [a[i] for i in tmp]
+    tmp = [i for i in tmp_dict.keys()]
+    q = f"insert into {table} (" + ', '.join(tmp) + ") values (" + ('%s, ' * (len(tmp) - 1)) + "%s)"
+    params = [tmp_dict[i] for i in tmp]
+    with mysql.connector.connect(**p_conn_data) as con:
+        cur = con.cursor()
+        try:
+            cur.execute(q, params)
+        except:
+            log_exceptions(q=q, params=params)
+        finally:
+            con.commit()
+
 def update_data_sms(**kwargs):
     if 'Type_Ref' in kwargs:
         with mysql.connector.connect(**logs_conn_data) as con:

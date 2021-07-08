@@ -2,7 +2,7 @@ import os
 
 import mysql.connector
 import requests
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, render_template
 from flask_cors import CORS
 
 from alerts_ import get_db_conf
@@ -46,6 +46,24 @@ def getpaths():
             data_list.append(temp)
     return jsonify(data_list)
 
+@app.route("/createpaths", methods=["POST"])
+def createpaths():
+    data = request.form.to_dict()
+    if 'sno' in data:
+        q = "insert into paths set "
+        params = []
+        for i in data:
+            if i != 'sno':
+                q = q + i + "=" + '%s,'
+                params.append(data[i])
+        q = q.strip(',') + " where sno=%s"
+        params.append(data['sno'])
+        with mysql.connector.connect(**logs_conn_data) as con:
+            cur = con.cursor()
+            cur.execute(q, params)
+            con.commit()
+        return jsonify({"msg": "done"})
+
 @app.route("/setpaths", methods=["POST"])
 def setpaths():
     data = request.form.to_dict()
@@ -75,6 +93,10 @@ def delpaths():
         con.commit()
     return jsonify({"msg": "done"})
 
+@app.route('/hello')
+def hello():
+    inslist = [1,2,3]
+    return render_template('index.html', inslist=inslist)
 
 @app.route("/api/downloadfile")
 def get_file():
