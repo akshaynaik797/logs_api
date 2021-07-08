@@ -30,7 +30,8 @@ def index():
 @app.route("/getpathscoldata", methods=["POST"])
 def getpathscoldata():
     data = request.form.to_dict()
-    temp = {"process": [], "insurer": []}
+    fields = ["insurer", "process", "field", "is_input", "path_type", "path_value", "api_field", "default_value", "step", "seq", "relation", "flag", "sno"]
+    temp = {"process": [], "insurer": [], "fields": fields}
     q = "select distinct(process) from paths", "select distinct(insurer) from paths"
     with mysql.connector.connect(**logs_conn_data) as con:
         cur = con.cursor()
