@@ -77,7 +77,8 @@
                         })
                     });
             });
-            $("#open").click(function () { $('#myModal').modal('show'); });
+            $("td > button").click(function () { $('#myModal').modal('show'); });
+
         });
     </script>
 </head>
@@ -89,17 +90,12 @@
     <label for="process">Choose Process</label>
     <select name="process" id="process"></select>
     <button id="getpaths" class='btn btn-primary btn-sm'>get</button>
+    <button id="open" class='btn btn-primary btn-sm'>open</button>
     <p id="recordsmsg" class="alert alert-success"></p>
     <table id="getpathsdata" class="table table-striped table-bordered">
         <thead style="position: sticky;top: 0"></thead>
         <tbody></tbody>
     </table>
-    <!-- Button trigger modal -->
-    <button id="open" class='btn btn-primary btn-sm'>open</button>
-    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
-        Launch static backdrop modal
-    </button>
-
     <!-- Modal -->
     <div id="myModal" class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false"
         tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
