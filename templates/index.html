@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>edit_paths</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $(document).ajaxError(function () {
+                alert("Connection error");
+            });
+            $.post("http://localhost:9980/getpathscoldata",
+                {
+                },
+                function (data, status) {
+                    if (status != "success") {
+                        alert("Status: " + status);
+                    }
+                    else {
+                        var options = data.insurer.map(function (val, ind) {
+                            return $("<option></option>").val(val).html(val);
+                        });
+                        $('#insurer').append(options);
+                        var options = data.process.map(function (val, ind) {
+                            return $("<option></option>").val(val).html(val);
+                        });
+                        $('#process').append(options);
+                    }
+
+                });
+            $("#getpaths").click(function () {
+                var processName = $('#process').find(":selected").text();
+                var insurerName = $('#insurer').find(":selected").text();
+                var z = 'ads'
+                /*
+                $.post("http://localhost:9980/getpaths",
+                    {
+                        sno: "74",
+                    },
+                    function (data, status) {
+                        alert("Data: " + data + "\nStatus: " + status);
+                    });*/
+            });
+        });
+    </script>
+</head>
+
+<body>
+    <h3>Editing paths records</h3>
+    <label for="insurer">Choose Insurer</label>
+    <select name="insurer" id="insurer"></select>
+    <label for="process">Choose Process</label>
+    <select name="process" id="process"></select>
+    <button id="getpaths">get</button>
+</body>
+
+</html>
