@@ -48,7 +48,7 @@ def insert_in_table(tmp_dict, table):
     tmp = [i for i in tmp_dict.keys()]
     q = f"insert into {table} (" + ', '.join(tmp) + ") values (" + ('%s, ' * (len(tmp) - 1)) + "%s)"
     params = [tmp_dict[i] for i in tmp]
-    with mysql.connector.connect(**p_conn_data) as con:
+    with mysql.connector.connect(**logs_conn_data) as con:
         cur = con.cursor()
         try:
             cur.execute(q, params)

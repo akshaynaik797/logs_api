@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify, send_from_directory, render_template
 from flask_cors import CORS
 
 from alerts_ import get_db_conf
-from common import conf_conn_data, logs_conn_data, p_conn_data
+from common import conf_conn_data, logs_conn_data, p_conn_data, insert_in_table
 
 app = Flask(__name__)
 
@@ -49,20 +49,8 @@ def getpaths():
 @app.route("/createpaths", methods=["POST"])
 def createpaths():
     data = request.form.to_dict()
-    if 'sno' in data:
-        q = "insert into paths set "
-        params = []
-        for i in data:
-            if i != 'sno':
-                q = q + i + "=" + '%s,'
-                params.append(data[i])
-        q = q.strip(',') + " where sno=%s"
-        params.append(data['sno'])
-        with mysql.connector.connect(**logs_conn_data) as con:
-            cur = con.cursor()
-            cur.execute(q, params)
-            con.commit()
-        return jsonify({"msg": "done"})
+    insert_in_table(data, 'paths')
+    return jsonify({"msg": "done"})
 
 @app.route("/setpaths", methods=["POST"])
 def setpaths():
