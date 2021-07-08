@@ -27,6 +27,23 @@ app.config['referrer_url'] = None
 def index():
     return "this is logs api"
 
+@app.route("/getpathscoldata", methods=["POST"])
+def getpathscoldata():
+    data = request.form.to_dict()
+    temp = {"process": [], "insurer": []}
+    q = "select distinct(process) from paths", "select distinct(insurer) from paths"
+    with mysql.connector.connect(**logs_conn_data) as con:
+        cur = con.cursor()
+        cur.execute(q[0])
+        r = cur.fetchall()
+        for row in r:
+            temp['process'].append(row[0])
+        cur.execute(q[1])
+        r = cur.fetchall()
+        for row in r:
+            temp['insurer'].append(row[0])
+    return jsonify(temp)
+
 @app.route("/getpaths", methods=["POST"])
 def getpaths():
     data = request.form.to_dict()
