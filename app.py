@@ -27,6 +27,55 @@ app.config['referrer_url'] = None
 def index():
     return "this is logs api"
 
+@app.route("/getpaths", methods=["POST"])
+def getpaths():
+    data = request.form.to_dict()
+    table, date_format, data_list = "paths", '%d/%m/%Y %H:%i:%s', []
+    fields = ["insurer", "process", "field", "is_input", "path_type", "path_value", "api_field", "default_value", "step", "seq", "relation", "flag", "sno"]
+    q = f"select * from {table} where "
+    q += ' and '.join([i + "=%s" for i in data.keys()])
+    params = [data[i] for i in data.keys()]
+    with mysql.connector.connect(**logs_conn_data) as con:
+        cur = con.cursor()
+        cur.execute(q, params)
+        r = cur.fetchall()
+        for row in r:
+            temp = {}
+            for k, v in zip(fields, row):
+                temp[k] = v
+            data_list.append(temp)
+    return jsonify(data_list)
+
+@app.route("/setpaths", methods=["POST"])
+def setpaths():
+    data = request.form.to_dict()
+    if 'sno' in data:
+        q = "update paths set "
+        params = []
+        for i in data:
+            if i != 'sno':
+                q = q + i + "=" + '%s,'
+                params.append(data[i])
+        q = q.strip(',') + " where sno=%s"
+        params.append(data['sno'])
+        with mysql.connector.connect(**logs_conn_data) as con:
+            cur = con.cursor()
+            cur.execute(q, params)
+            con.commit()
+        return jsonify({"msg": "done"})
+
+@app.route("/delpaths", methods=["POST"])
+def delpaths():
+    data = request.form.to_dict()
+    q = "delete from paths where sno=%s"
+    params = [data['sno']]
+    with mysql.connector.connect(**logs_conn_data) as con:
+        cur = con.cursor()
+        cur.execute(q, params)
+        con.commit()
+    return jsonify({"msg": "done"})
+
+
 @app.route("/api/downloadfile")
 def get_file():
     """Download a file."""
