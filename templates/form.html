@@ -19,20 +19,14 @@
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="staticBackdropLabel">Modal title</h5>
+                        <h5 class="modal-title" id="staticBackdropLabel"></h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <!--
-                        <div class="input-group input-group-sm mb-3">
-                            <span class="input-group-text">{{key}}</span>
-                            <input type="text" name={{key}} value={{value}} class="form-control">
-                        </div>
-                        -->
                     </div>
                     <div class="modal-footer">
                         <button id="btn1" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button class="btn btn-primary">Submit</button>
+                        <button id="btn2" class="btn btn-primary">Submit</button>
                     </div>
                 </div>
             </div>
@@ -140,19 +134,31 @@
                 alert("Connection error");
             });
             $("[id^='edit']").click(function () {
-                var btnId = $(this).attr("id");
-                $('.modal-body').empty();
-                var cols = $('thead > tr > td').map(function () {
+                var rowId = $(this).attr("id").replace("edit_", "row");
+
+                var keys = $('thead > tr > td').map(function () {
                     return $(this).text();
                 });
-                console.log(cols.length);
-                var formaction = urlName + "getpaths";
-                var field = '<div class="input-group input-group-sm mb-3"><span class="input-group-text">{{key}}</span><input type="text" name={{key}} value={{value}} class="form-control"></div>'
-                $("form").attr("action", formaction);
-                $('.modal-body').append(field.replace("{{key}}", "name").replace("{{value}}", "akshay"));
-                $('.modal-body').append(field.replace("{{key}}", "phone").replace("{{value}}", "45689"));
-                $('#myModal').modal('show');
 
+                var values = $("#" + rowId + ' > td').map(function () {
+                    return $(this).text();
+                });
+
+                var formaction = urlName + "getpaths";
+
+                var field = '<div class="input-group input-group-sm mb-3"><span class="input-group-text">{{key}}</span><input type="text" name={{key}} value="{{value}}" class="form-control"></div>'
+
+                $('.modal-body').empty();
+                $("form").attr("action", formaction);
+                $(".modal-title").text("Edit Record");
+
+                $.each(keys, function (i, item) {
+                    if (keys[i] != "Edit" && keys[i] != "Delete") {
+                        $('.modal-body').append(field.replace("{{key}}", keys[i]).replace("{{value}}", values[i]));
+                    }
+                });
+
+                $('#myModal').modal('show');
             });
         });
     </script>
