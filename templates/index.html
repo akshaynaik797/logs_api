@@ -105,7 +105,7 @@
                             $('#getpathsdata thead').append(table_row);
                         }
                         $.each(data, function (index, row) {
-                            var table_row = $("<tr></tr>").attr("id", row.sno);
+                            var table_row = $("<tr></tr>").attr("id", "row" + row.sno);
                             table_row.append($("<td><button type='button' class='btn btn-sm btn-success' id=" + "edit_" + row.sno + ">Edit</button></td>").click(function () { $('#myModal').modal('show'); }));
                             table_row.append($("<td><button type='button' class='btn btn-sm btn-danger' id=" + "del_" + row.sno + ">Delete</button></td>").click(function () { $('#myModal').modal('show'); }));
                             $.each(row, function (index, item) {
