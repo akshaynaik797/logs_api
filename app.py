@@ -12,9 +12,6 @@ app = Flask(__name__)
 
 cors = CORS(app)
 
-####for test purpose
-# run_sms_scheduler()
-####
 
 dir_name = 'excel_files'
 if not os.path.exists(dir_name):
@@ -85,8 +82,7 @@ def setpaths():
         with mysql.connector.connect(**logs_conn_data) as con:
             cur = con.cursor()
             cur.execute(q, params)
-            ####for test purpose
-            # con.commit()
+            con.commit()
         return jsonify({"msg": "done"})
 
 @app.route("/delpaths", methods=["POST"])
