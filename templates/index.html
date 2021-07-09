@@ -24,30 +24,25 @@
         <thead style="position: sticky;top: 0"></thead>
         <tbody></tbody>
     </table>
-    <!-- Modal -->
-    <div id="myModal" class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false"
-        tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="staticBackdropLabel">Modal title</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="input-group input-group-sm mb-3">
-                        <span class="input-group-text" id="inputGroup-sizing-sm">Small</span>
-                        <input type="text" class="form-control" aria-label="Sizing example input"
-                            aria-describedby="inputGroup-sizing-sm">
+    <form>
+        <div id="myModal" class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false"
+            tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="staticBackdropLabel"></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    ...
-                </div>
-                <div class="modal-footer">
-                    <button id="btn1" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary">Understood</button>
+                    <div class="modal-body">
+                    </div>
+                    <div class="modal-footer">
+                        <button id="btn1" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button id="btn2" type="button" class="btn btn-primary">Submit</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </form>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
         crossorigin="anonymous"></script>
@@ -79,6 +74,7 @@
                     }
 
                 });
+
             $("#getpaths").click(function () {
                 $('#getpathsdata thead').empty();
                 $('#getpathsdata tbody').empty();
@@ -106,8 +102,8 @@
                         }
                         $.each(data, function (index, row) {
                             var table_row = $("<tr></tr>").attr("id", "row" + row.sno);
-                            table_row.append($("<td><button type='button' class='btn btn-sm btn-success' id=" + "edit_" + row.sno + ">Edit</button></td>").click(function () { $('#myModal').modal('show'); }));
-                            table_row.append($("<td><button type='button' class='btn btn-sm btn-danger' id=" + "del_" + row.sno + ">Delete</button></td>").click(function () { $('#myModal').modal('show'); }));
+                            table_row.append($("<td><button type='button' class='btn btn-sm btn-success' id=" + "edit_" + row.sno + ">Edit</button></td>"));
+                            table_row.append($("<td><button type='button' class='btn btn-sm btn-danger' id=" + "del_" + row.sno + ">Delete</button></td>"));
                             $.each(row, function (index, item) {
                                 var table_cell = $("<td></td>").html(item);
                                 table_row.append(table_cell);
@@ -116,8 +112,55 @@
                         })
                     });
             });
-            var a = $("[id^='edit']");
-            var b = "Asda";
+            $(document).on("click", "[id^='edit']", function () {
+                var rowId = $(this).attr("id").replace("edit_", "row");
+
+                var keys = $('thead > tr > td').map(function () {
+                    return $(this).text();
+                });
+
+                var values = $("#" + rowId + ' > td').map(function () {
+                    return $(this).text();
+                });
+
+                var formaction = urlName + "setpaths";
+
+                var field = '<div class="input-group input-group-sm mb-3"><span class="input-group-text">{{key}}</span><input type="text" name={{key}} value="{{value}}" class="form-control"></div>'
+
+                $('.modal-body').empty();
+                $(".modal-title").text("Edit Record");
+                $("#btn2").text("Save");
+
+                $.each(keys, function (i, item) {
+                    if (keys[i] != "Edit" && keys[i] != "Delete") {
+                        $('.modal-body').append(field.replaceAll("{{key}}", keys[i]).replaceAll("{{value}}", values[i]));
+                    }
+                });
+
+                $('#myModal').modal('show');
+            });
+
+            $("#btn2").click(function () {
+                var keys = $(":text").map(function () {
+                    return $(this).attr("name");
+                });
+
+                var values = $(":text").map(function () {
+                    return $(this).val();
+                });
+
+                var result = {};
+                $.each(keys, function (i, item) {
+                    result[keys[i]] = values[i]
+                });
+
+                var formaction = urlName + "setpaths";
+
+                $.post(formaction, result, function (data, status) {
+                    alert("Saved.");
+                });
+            });
+
         });
     </script>
 </body>

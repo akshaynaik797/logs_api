@@ -12,8 +12,7 @@
 </head>
 
 <body>
-    <button id="makeform" class="btn btn-primary">Make</button>
-    <form action="" method="post">
+    <form>
         <div id="myModal" class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false"
             tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
             <div class="modal-dialog">
@@ -26,7 +25,7 @@
                     </div>
                     <div class="modal-footer">
                         <button id="btn1" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button id="btn2" class="btn btn-primary">Submit</button>
+                        <button id="btn2" type="button" class="btn btn-primary">Submit</button>
                     </div>
                 </div>
             </div>
@@ -144,21 +143,42 @@
                     return $(this).text();
                 });
 
-                var formaction = urlName + "getpaths";
+                var formaction = urlName + "setpaths";
 
                 var field = '<div class="input-group input-group-sm mb-3"><span class="input-group-text">{{key}}</span><input type="text" name={{key}} value="{{value}}" class="form-control"></div>'
 
                 $('.modal-body').empty();
-                $("form").attr("action", formaction);
                 $(".modal-title").text("Edit Record");
+                $("#btn2").text("Save");
 
                 $.each(keys, function (i, item) {
                     if (keys[i] != "Edit" && keys[i] != "Delete") {
-                        $('.modal-body').append(field.replace("{{key}}", keys[i]).replace("{{value}}", values[i]));
+                        $('.modal-body').append(field.replaceAll("{{key}}", keys[i]).replaceAll("{{value}}", values[i]));
                     }
                 });
 
                 $('#myModal').modal('show');
+            });
+
+            $("#btn2").click(function () {
+                var keys = $(":text").map(function () {
+                    return $(this).attr("name");
+                });
+
+                var values = $(":text").map(function () {
+                    return $(this).val();
+                });
+
+                var result = {};
+                $.each(keys, function (i, item) {
+                    result[keys[i]] = values[i]
+                });
+
+                var formaction = urlName + "setpaths";
+
+                $.post(formaction, result, function (data, status) {
+                    alert("Saved.");
+                });
             });
         });
     </script>

@@ -85,7 +85,8 @@ def setpaths():
         with mysql.connector.connect(**logs_conn_data) as con:
             cur = con.cursor()
             cur.execute(q, params)
-            con.commit()
+            ####for test purpose
+            # con.commit()
         return jsonify({"msg": "done"})
 
 @app.route("/delpaths", methods=["POST"])
