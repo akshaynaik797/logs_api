@@ -96,11 +96,6 @@ def delpaths():
         con.commit()
     return jsonify({"msg": "done"})
 
-@app.route('/hello')
-def hello():
-    a = request.url_root
-    inslist = [1,2,3]
-    return render_template('index.html')
 
 @app.route("/api/downloadfile")
 def get_file():
