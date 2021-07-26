@@ -48,6 +48,7 @@
         crossorigin="anonymous"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
+        var fieldList = [];
         $(document).ready(function () {
             var urlName = "http://localhost:9980/"
             $('#getpathsdata thead').css({ "background-color": "rgba(0, 0, 0, 0.5)", "color": "white" });
@@ -63,6 +64,7 @@
                         alert("Status: " + status);
                     }
                     else {
+                        fieldList = data.fields;
                         var options = data.insurer.map(function (val, ind) {
                             return $("<option></option>").val(val).html(val);
                         });
@@ -162,6 +164,27 @@
                     $( "#getpaths" ).click();
                 });
             });
+
+            $(document).on("click", "[id^='addrecord']", function () {
+                var formaction = urlName + "createpaths";
+                var keys = fieldList;
+
+                var field = '<div class="input-group input-group-sm mb-3"><span class="input-group-text">{{key}}</span><input type="text" name={{key}} value="" class="form-control"></div>'
+
+                $('.modal-body').empty();
+                $(".modal-title").text("Edit Record");
+                $("#btn2").text("Save");
+
+                $.each(keys, function (i, item) {
+                    if (keys[i] != "Edit" && keys[i] != "Delete") {
+                        $('.modal-body').append(field.replaceAll("{{key}}", keys[i]));
+                    }
+                });
+
+                $("[name='sno']").attr({"readonly": "", "disable": ""});
+                $('#myModal').modal('show');
+            });
+
 
         });
     </script>
