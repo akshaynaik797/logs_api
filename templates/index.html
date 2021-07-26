@@ -145,7 +145,10 @@
 
             $(document).on("click", "[id^='del']", function () {
                 var rowId = $(this).attr("id").replace("del_", "");
+                var field = '<div class="input-group input-group-sm mb-3"><span class="input-group-text">sno</span><input type="text" name="sno" value="' + rowId + '" class="form-control"></div>'
                 $('.modal-body').empty();
+                $('.modal-body').append(field);
+                $("[name='sno']").attr({ "readonly": "", "disable": "" });
                 $(".modal-title").text("Delete Record?");
                 $("#btn2").text("Delete")
                 $('#myModal').modal('show');
@@ -177,9 +180,12 @@
                 else if (btnText === "Delete") {
                     var formaction = urlName + "delpaths";
                     var alertText = "Record Deleted";
-                    var result = {"sno": "9999"};
+                    var result = { "sno": $("[name='sno']").val() };
                 }
                 $.post(formaction, result, function (data, status) {
+                    if (btnText === "Delete") {
+                        $('#myModal').modal('hide');
+                    }
                     alert(alertText);
                     $("#getpaths").click();
                 });
