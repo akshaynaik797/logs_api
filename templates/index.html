@@ -139,10 +139,10 @@
                     }
                 });
 
-                $("[name='sno']").attr({"readonly": "", "disable": ""});
+                $("[name='sno']").attr({ "readonly": "", "disable": "" });
                 $('#myModal').modal('show');
             });
-            
+
             $(document).on("click", "#btn2", function () {
                 var keys = $(":text").map(function () {
                     return $(this).attr("name");
@@ -157,31 +157,37 @@
                     result[keys[i]] = values[i]
                 });
 
-                var formaction = urlName + "setpaths";
+                var btnText = $("#btn2").text();
+                if (btnText === "Save") {
+                    var formaction = urlName + "setpaths";
+                    var alertText = "Saved";
+                }
+                else {
+                    var formaction = urlName + "createpaths";
+                    var alertText = "Added record";
+                }
 
                 $.post(formaction, result, function (data, status) {
-                    alert("Saved.");
-                    $( "#getpaths" ).click();
+                    alert(alertText);
+                    $("#getpaths").click();
                 });
             });
 
             $(document).on("click", "[id^='addrecord']", function () {
-                var formaction = urlName + "createpaths";
                 var keys = fieldList;
 
                 var field = '<div class="input-group input-group-sm mb-3"><span class="input-group-text">{{key}}</span><input type="text" name={{key}} value="" class="form-control"></div>'
 
                 $('.modal-body').empty();
-                $(".modal-title").text("Edit Record");
-                $("#btn2").text("Save");
+                $(".modal-title").text("Add Record");
+                $("#btn2").text("Add");
 
                 $.each(keys, function (i, item) {
-                    if (keys[i] != "Edit" && keys[i] != "Delete") {
+                    if (keys[i] != "Edit" && keys[i] != "Delete" && keys[i] != "sno") {
                         $('.modal-body').append(field.replaceAll("{{key}}", keys[i]));
                     }
                 });
 
-                $("[name='sno']").attr({"readonly": "", "disable": ""});
                 $('#myModal').modal('show');
             });
 
