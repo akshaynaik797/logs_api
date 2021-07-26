@@ -143,6 +143,14 @@
                 $('#myModal').modal('show');
             });
 
+            $(document).on("click", "[id^='del']", function () {
+                var rowId = $(this).attr("id").replace("del_", "");
+                $('.modal-body').empty();
+                $(".modal-title").text("Delete Record?");
+                $("#btn2").text("Delete")
+                $('#myModal').modal('show');
+            });
+
             $(document).on("click", "#btn2", function () {
                 var keys = $(":text").map(function () {
                     return $(this).attr("name");
@@ -162,11 +170,10 @@
                     var formaction = urlName + "setpaths";
                     var alertText = "Saved";
                 }
-                else {
+                else if (btnText === "Add") {
                     var formaction = urlName + "createpaths";
                     var alertText = "Added record";
                 }
-
                 $.post(formaction, result, function (data, status) {
                     alert(alertText);
                     $("#getpaths").click();

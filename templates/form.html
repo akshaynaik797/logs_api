@@ -1,188 +1,40 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>edit_paths</title>
-    </style>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>jQuery UI Dialog - Modal confirmation</title>
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <link rel="stylesheet" href="/resources/demos/style.css">
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <script>
+  $( function() {
+    $( "#dialog-confirm" ).dialog({
+      resizable: false,
+      height: "auto",
+      width: 400,
+      modal: true,
+      buttons: {
+        "Delete all items": function() {
+          $( this ).dialog( "close" );
+        },
+        Cancel: function() {
+          $( this ).dialog( "close" );
+        }
+      }
+    });
+  } );
+  </script>
 </head>
-
 <body>
-    <form>
-        <div id="myModal" class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false"
-            tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="staticBackdropLabel"></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                    </div>
-                    <div class="modal-footer">
-                        <button id="btn1" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button id="btn2" type="button" class="btn btn-primary">Submit</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </form>
-    <table id="getpathsdata" class="table table-striped table-bordered">
-        <thead style="position: sticky; top: 0px; background-color: rgba(0, 0, 0, 0.5); color: white;">
-            <tr>
-                <td>Edit</td>
-                <td>Delete</td>
-                <td>api_field</td>
-                <td>default_value</td>
-                <td>field</td>
-                <td>flag</td>
-                <td>insurer</td>
-                <td>is_input</td>
-                <td>path_type</td>
-                <td>path_value</td>
-                <td>process</td>
-                <td>relation</td>
-                <td>seq</td>
-                <td>sno</td>
-                <td>step</td>
-            </tr>
-        </thead>
-        <tbody>
-            <tr id="row2">
-                <td><button type="button" class="btn btn-sm btn-success" id="edit_2">Edit</button></td>
-                <td><button type="button" class="btn btn-sm btn-danger" id="del_2">Delete</button></td>
-                <td></td>
-                <td></td>
-                <td>Login</td>
-                <td>A</td>
-                <td>13</td>
-                <td>B</td>
-                <td>xpath</td>
-                <td>//input[@id='btnLogIn']</td>
-                <td>login</td>
-                <td>NULL</td>
-                <td>4</td>
-                <td>2</td>
-                <td>Click on Login</td>
-            </tr>
-            <tr id="row3">
-                <td><button type="button" class="btn btn-sm btn-success" id="edit_3">Edit</button></td>
-                <td><button type="button" class="btn btn-sm btn-danger" id="del_3">Delete</button></td>
-                <td>0:PortalPass</td>
-                <td></td>
-                <td>Password</td>
-                <td>A</td>
-                <td>13</td>
-                <td>I</td>
-                <td>xpath</td>
-                <td>//input[@id='txtPassword']</td>
-                <td>login</td>
-                <td>NULL</td>
-                <td>3</td>
-                <td>3</td>
-                <td>Enter password</td>
-            </tr>
-            <tr id="row4">
-                <td><button type="button" class="btn btn-sm btn-success" id="edit_4">Edit</button></td>
-                <td><button type="button" class="btn btn-sm btn-danger" id="del_4">Delete</button></td>
-                <td>0:PortalLink</td>
-                <td></td>
-                <td>Portal link</td>
-                <td>A</td>
-                <td>13</td>
-                <td>I</td>
-                <td></td>
-                <td></td>
-                <td>login</td>
-                <td>NULL</td>
-                <td>1</td>
-                <td>4</td>
-                <td>Mention url inweb address bar</td>
-            </tr>
-            <tr id="row5">
-                <td><button type="button" class="btn btn-sm btn-success" id="edit_5">Edit</button></td>
-                <td><button type="button" class="btn btn-sm btn-danger" id="del_5">Delete</button></td>
-                <td>0:PortalUser</td>
-                <td></td>
-                <td>Username</td>
-                <td>A</td>
-                <td>13</td>
-                <td>I</td>
-                <td>xpath</td>
-                <td>//input[@id='txtUserName']</td>
-                <td>login</td>
-                <td>NULL</td>
-                <td>2</td>
-                <td>5</td>
-                <td>Enter Username</td>
-            </tr>
-        </tbody>
-    </table>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
-        crossorigin="anonymous"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script>
-        $(document).ready(function () {
-            var urlName = "http://localhost:9980/"
-            $(document).ajaxError(function () {
-                alert("Connection error");
-            });
-            $("[id^='edit']").click(function () {
-                var rowId = $(this).attr("id").replace("edit_", "row");
-
-                var keys = $('thead > tr > td').map(function () {
-                    return $(this).text();
-                });
-
-                var values = $("#" + rowId + ' > td').map(function () {
-                    return $(this).text();
-                });
-
-                var formaction = urlName + "setpaths";
-
-                var field = '<div class="input-group input-group-sm mb-3"><span class="input-group-text">{{key}}</span><input type="text" name={{key}} value="{{value}}" class="form-control"></div>'
-
-                $('.modal-body').empty();
-                $(".modal-title").text("Edit Record");
-                $("#btn2").text("Save");
-
-                $.each(keys, function (i, item) {
-                    if (keys[i] != "Edit" && keys[i] != "Delete") {
-                        $('.modal-body').append(field.replaceAll("{{key}}", keys[i]).replaceAll("{{value}}", values[i]));
-                    }
-                });
-
-                $('#myModal').modal('show');
-            });
-
-            $("#btn2").click(function () {
-                var keys = $(":text").map(function () {
-                    return $(this).attr("name");
-                });
-
-                var values = $(":text").map(function () {
-                    return $(this).val();
-                });
-
-                var result = {};
-                $.each(keys, function (i, item) {
-                    result[keys[i]] = values[i]
-                });
-
-                var formaction = urlName + "setpaths";
-
-                $.post(formaction, result, function (data, status) {
-                    alert("Saved.");
-                });
-            });
-        });
-    </script>
-
+ 
+<div id="dialog-confirm" title="Empty the recycle bin?">
+  <p><span class="ui-icon ui-icon-alert" style="float:left; margin:12px 12px 20px 0;"></span>These items will be permanently deleted and cannot be recovered. Are you sure?</p>
+</div>
+ 
+<p>Sed vel diam id libero <a href="http://example.com">rutrum convallis</a>. Donec aliquet leo vel magna. Phasellus rhoncus faucibus ante. Etiam bibendum, enim faucibus aliquet rhoncus, arcu felis ultricies neque, sit amet auctor elit eros a lectus.</p>
+ 
+ 
 </body>
-
 </html>
