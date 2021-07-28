@@ -66,7 +66,7 @@
                     else {
                         fieldList = data.fields;
                         var options = data.insurer.map(function (val, ind) {
-                            return $("<option></option>").val(val).html(val);
+                            return $("<option></option>").val(val[0]).html(val[1]);
                         });
                         $('#insurer').append(options);
                         var options = data.process.map(function (val, ind) {
@@ -80,8 +80,8 @@
             $("#getpaths").click(function () {
                 $('#getpathsdata thead').empty();
                 $('#getpathsdata tbody').empty();
-                var processName = $('#process').find(":selected").text();
-                var insurerName = $('#insurer').find(":selected").text();
+                var processName = $('#process').val();
+                var insurerName = $('#insurer').val();
                 $.post(urlName + "getpaths",
                     {
                         insurer: insurerName,
