@@ -29,17 +29,21 @@ def getpathscoldata():
     data = request.form.to_dict()
     fields = ["insurer", "process", "field", "is_input", "path_type", "path_value", "api_field", "default_value", "step", "seq", "relation", "flag", "sno"]
     temp = {"process": [], "insurer": [], "fields": fields}
+    q1 = 'SELECT IC_ID, IC_name FROM python.IC_name where IC_ID is not null and ic_id != ""'
     q = "select distinct(process) from paths", "select distinct(insurer) from paths"
     with mysql.connector.connect(**logs_conn_data) as con:
         cur = con.cursor()
+        cur.execute(q1)
+        r = cur.fetchall()
+        tmp_dict = {j: k for j, k in r}
+        cur.execute(q[1])
+        r = cur.fetchall()
+        for row in r:
+            temp['insurer'].append([row[0], tmp_dict[row[0]]])
         cur.execute(q[0])
         r = cur.fetchall()
         for row in r:
             temp['process'].append(row[0])
-        cur.execute(q[1])
-        r = cur.fetchall()
-        for row in r:
-            temp['insurer'].append(row[0])
     return jsonify(temp)
 
 @app.route("/getpaths", methods=["POST"])
