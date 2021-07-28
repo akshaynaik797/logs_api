@@ -39,7 +39,7 @@ def getpathscoldata():
         cur.execute(q[1])
         r = cur.fetchall()
         for row in r:
-            temp['insurer'].append([row[0], tmp_dict[row[0]]])
+            temp['insurer'].append([row[0], tmp_dict[row[0]] if row[0] in tmp_dict else row[0]])
         cur.execute(q[0])
         r = cur.fetchall()
         for row in r:
