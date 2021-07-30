@@ -45,6 +45,8 @@ def insert_in_table(tmp_dict, table):
     # tmp = [i for i in a.keys()]
     # q = "insert into table (" + ', '.join(tmp) + ") values (" + ('%s, ' * (len(tmp) - 1)) + "%s)"
     # params = [a[i] for i in tmp]
+    if table == 'paths':
+        tmp_dict['insurer'] = tmp_dict['insurer'].split(',')[0]
     tmp = [i for i in tmp_dict.keys()]
     q = f"insert into {table} (" + ', '.join(tmp) + ") values (" + ('%s, ' * (len(tmp) - 1)) + "%s)"
     params = [tmp_dict[i] for i in tmp]
