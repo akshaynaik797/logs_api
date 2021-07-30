@@ -17,6 +17,7 @@
     <select name="insurer" id="insurer"></select>
     <label for="process">Choose Process</label>
     <select name="process" id="process"></select>
+    <select name="is_input" id="is_input" hidden></select>
     <button id="getpaths" class='btn btn-primary btn-sm'>Get Records</button>
     <button id="addrecord" class='btn btn-info btn-sm'>Add Record</button>
     <p id="recordsmsg" class="alert alert-success"></p>
@@ -73,6 +74,10 @@
                             return $("<option></option>").val(val).html(val);
                         });
                         $('#process').append(options);
+                        var options = data.is_input.map(function (val, ind) {
+                            return $("<option></option>").val(val).html(val);
+                        });
+                        $('#is_input').append(options);
                     }
 
                 });
@@ -214,9 +219,15 @@
                 $("#insurerlist").append($temp);
 
                 var $processlist = '<datalist id="processlist"></datalist>';
-                var $temp1 = $('#process').children().clone().text('');
+                var $temp = $('#process').children().clone().text('');
                 $("input[name='process']").after($processlist).attr("list", "processlist");
-                $("#processlist").append($temp1);
+                $("#processlist").append($temp);
+                $('#myModal').modal('show');
+
+                var $is_inputlist = '<datalist id="is_inputlist"></datalist>';
+                var $temp = $('#is_input').children().clone().text('');
+                $("input[name='is_input']").after($is_inputlist).attr("list", "is_inputlist");
+                $("#is_inputlist").append($temp);
                 $('#myModal').modal('show');
             });
 
