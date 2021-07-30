@@ -198,8 +198,8 @@
                 var keys = fieldList;
 
                 var field = '<div class="input-group input-group-sm mb-3"><span class="input-group-text">{{key}}</span><input type="text" name={{key}} value="" class="form-control"></div>'
-                var tempf = '<datalist id="insurerlist"> </option> <option value="Chrome"> </option> <option value="Firefox"> </option> <option value="Internet Explorer"> </option> <option value="Opera">  </option><option value="Safari"> </option> <option value="Microsoft Edge"></option></datalist>';
-                // var tempf = $("#insurer").children().text('');
+                var $tempf = '<datalist id="insurerlist"></datalist>';
+                var $tempf1 = $('#insurer').children().clone().text('');
                 $('.modal-body').empty();
                 $(".modal-title").text("Add Record");
                 $("#btn2").text("Add");
@@ -209,7 +209,8 @@
                         $('.modal-body').append(field.replaceAll("{{key}}", keys[i]));
                     }
                 });
-                $( "input[name='insurer']" ).after(tempf).attr("list", "insurerlist");
+                $( "input[name='insurer']" ).after($tempf).attr("list", "insurerlist");
+                $("#insurerlist").append($tempf1);
                 $('#myModal').modal('show');
             });
 
