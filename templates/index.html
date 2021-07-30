@@ -18,6 +18,7 @@
     <label for="process">Choose Process</label>
     <select name="process" id="process"></select>
     <select name="is_input" id="is_input" hidden></select>
+    <select name="inslist" id="inslist" hidden></select>
     <button id="getpaths" class='btn btn-primary btn-sm'>Get Records</button>
     <button id="addrecord" class='btn btn-info btn-sm'>Add Record</button>
     <p id="recordsmsg" class="alert alert-success"></p>
@@ -78,6 +79,11 @@
                             return $("<option></option>").val(val).html(val);
                         });
                         $('#is_input').append(options);
+                        
+                        var options = data.inslist.map(function (val, ind) {
+                            return $("<option></option>").val(val).html(val);
+                        });
+                        $('#inslist').append(options);
                     }
 
                 });
@@ -214,7 +220,7 @@
                 });
 
                 var $insurerlist = '<datalist id="insurerlist"></datalist>';
-                var $temp = $('#insurer').children().clone().text('');
+                var $temp = $('#inslist').children().clone().text('');
                 $("input[name='insurer']").after($insurerlist).attr("list", "insurerlist");
                 $("#insurerlist").append($temp);
 
@@ -229,6 +235,7 @@
                 $("input[name='is_input']").after($is_inputlist).attr("list", "is_inputlist");
                 $("#is_inputlist").append($temp);
                 $('#myModal').modal('show');
+
             });
 
 
