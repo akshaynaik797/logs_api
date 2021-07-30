@@ -67,6 +67,8 @@ def getpaths():
         for row in r:
             temp = {}
             for k, v in zip(fields, row):
+                if isinstance(v, str) and '"' in v:
+                    v = v.replace('"', "'")
                 temp[k] = v
             data_list.append(temp)
     return jsonify(data_list)
