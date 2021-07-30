@@ -36,7 +36,7 @@ def getpathscoldata():
         cur.execute(q1)
         r = cur.fetchall()
         for row in r:
-            temp["inslist"].append(row)
+            temp["inslist"].append(row[0] + ', ' + row[1])
         tmp_dict = {j: k for j, k in r}
         cur.execute(q[1])
         r = cur.fetchall()
