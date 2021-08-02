@@ -27,6 +27,8 @@ def index():
 @app.route("/getpathscoldata", methods=["POST"])
 def getpathscoldata():
     data = request.form.to_dict()
+    is_input = ["B, button", "I, input", "Link, url link", "LIST, files to upload", "RB, radio button",
+                "code, code to exceute"]
     fields = ["insurer", "process", "field", "is_input", "path_type", "path_value", "api_field", "default_value", "step", "seq", "relation", "flag", "sno"]
     temp = {"process": [], "insurer": [], "is_input": [], "inslist": [], "fields": fields}
     q1 = 'SELECT IC_ID, IC_name FROM python.IC_name where IC_ID is not null and ic_id != ""'
@@ -48,8 +50,8 @@ def getpathscoldata():
             temp['process'].append(row[0])
         cur.execute(q[2])
         r = cur.fetchall()
-        for row in r:
-            temp['is_input'].append(row[0])
+        for row in is_input:
+            temp['is_input'].append(row)
     return jsonify(temp)
 
 @app.route("/getpaths", methods=["POST"])
